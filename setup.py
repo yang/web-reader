@@ -14,5 +14,6 @@ setup(
     ]
   },
   description='Simple SoundGecko replacement', requires=['requests', 'flask', 'nltk', 'pydub', 'boilerpipe', 'path.py',
-                                                         'goose-extractor', 'ftfy', 'sqlalchemy', 'psycopg2']
+                                                         'goose-extractor', 'ftfy', 'sqlalchemy', 'psycopg2', 'feedgen',
+                                                         'pq']
 )
