@@ -51,6 +51,7 @@ class Article(Base):
   converted = sa.Column(sa.DateTime)
 
 def swallow(f):
+  # noinspection PyBroadException
   try: return f()
   except: return None
 
