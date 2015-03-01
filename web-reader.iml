@@ -3,8 +3,7 @@
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
     <content url="file://$MODULE_DIR$" />
-    <orderEntry type="jdk" jdkName="Python 2.7.9 virtualenv at ~/.virtualenvs/web-reader" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="web-reader vm 2.7.3 (ssh://yang@localhost:1122/home/yang/.virtualenvs/web-reader/bin/python)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
-
