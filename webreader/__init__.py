@@ -179,6 +179,7 @@ def main(argv=sys.argv):
           article.title, article.body = convert(article.url, mp3path(article))
           article.converted = datetime.now()
   elif cmd == 'webserver':
-    app.run(debug=True)
+    port = int(argv[2]) if len(argv) > 2 else None
+    app.run(debug=True, port=port)
   else:
     raise Exception()
