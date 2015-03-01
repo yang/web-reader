@@ -38,7 +38,7 @@ db_session = None
 pq = None
 queue = None
 
-mp3dir = path.path('/tmp/mp3s')
+mp3dir = path.path('~/.webreader/mp3s').expanduser()
 
 Base = declarative_base()
 class Article(Base):
@@ -164,7 +164,7 @@ def main(argv=sys.argv):
     cmd = argv[1]
 
   if cmd == 'init':
-    mp3dir.mkdir_p()
+    mp3dir.makedirs_p()
     init_db()
     return
 
