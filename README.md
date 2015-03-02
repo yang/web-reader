@@ -2,6 +2,29 @@
 
 A quick-and-dirty SoundGecko replacement!
 
+Tested on Ubuntu 12.04.
+
+## Installation
+
+Install prerequisites:
+
+    sudo apt-get install postgresql-9.4 libav-tools ubuntu-restricted-extras
+
+(You may want to see how to install [later versions of Postgresql][pgdg] on your Ubuntu system, which is needed for JSON support required by [PQ].)
+
+In this source dir, install the application (e.g. into a virtualenv):
+
+    pip install .
+
+Download nltk data:
+
+    python -c 'import nltk; nltk.download()'
+
+Create the necessary postgresql user and DB:
+
+    sudo -u postgres createuser webreader
+    sudo -u postgres createdb -O webreader webreader
+
 ## Usage
 
 One-time: run `web-reader init` to set up the DB and MP3 dir.
@@ -33,3 +56,4 @@ Check the output Podcast RSS feed with <http://localhost:5000/feed>.
 [iSpeech]: http://www.ispeech.org/
 [pydub]: http://pydub.com/
 [feedgen]: https://github.com/lkiesow/python-feedgen
+[pgdg]: https://wiki.postgresql.org/wiki/Apt
