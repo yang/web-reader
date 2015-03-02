@@ -124,7 +124,7 @@ def convert(url, outpath):
   tempdir = path.path(tempfile.mkdtemp('web-reader'))
   ":type: path.Path"
 
-  log.debug('spooling %s sentences to temp dir %s', len(sents), tempdir)
+  log.info('spooling %s sentences to temp dir %s', len(sents), tempdir)
   for i, sent in enumerate(sents):
     params = dict(
       format='mp3',
