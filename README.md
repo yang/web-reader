@@ -20,10 +20,15 @@ Download nltk data:
 
     python -c 'import nltk; nltk.download()'
 
-Create the necessary postgresql user and DB:
+Create the necessary postgresql user and DB (and store the password in your [pgpass file]):
 
-    sudo -u postgres createuser webreader
+    sudo -u postgres createuser -P webreader
     sudo -u postgres createdb -O webreader webreader
+    touch ~/.pgpass
+    chmod 600 ~/.pgpass
+    cat >> ~/.pgpass
+    localhost:5432:webreader:webreader:PASSWORD
+    ^D
 
 ## Usage
 
@@ -57,3 +62,4 @@ Check the output Podcast RSS feed with <http://localhost:5000/feed>.
 [pydub]: http://pydub.com/
 [feedgen]: https://github.com/lkiesow/python-feedgen
 [pgdg]: https://wiki.postgresql.org/wiki/Apt
+[pgpass file]: http://www.postgresql.org/docs/9.3/static/libpq-pgpass.html
