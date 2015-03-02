@@ -91,10 +91,11 @@ def feed():
       .limit(30)
     for article in articles:
       fe = fg.add_entry()
-      fe.id('http://yz.mit.edu/audiolizard/%s.mp3' % article.id)
+      fe.id('http://yz.mit.edu/audiolizard/mp3/%s' % article.id)
       fe.title(article.title)
       fe.description(article.body)
-      fe.enclosure('http://yz.mit.edu:4647/mp3/%s' % article.id, 0, 'audio/mpeg')
+      fe.link(article.url)
+      fe.enclosure('http://yz.mit.edu/audiolizard/mp3/%s' % article.id, 0, 'audio/mpeg')
     return flask.Response(fg.rss_str(pretty=True), mimetype='application/rss+xml')
 
 @app.route('/mp3/<int:article_id>')
