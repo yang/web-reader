@@ -2,7 +2,6 @@ from datetime import datetime
 import logging
 import re
 import sys
-import itertools
 import tempfile
 from feedgen.feed import FeedGenerator
 import nltk
@@ -113,10 +112,13 @@ def convert(url, outpath):
   text = ftfy.fix_text(raw_text)
   title = ftfy.fix_text(raw_title)
 
-  sents = [title] + list(itertools.chain.from_iterable(
-    sent_detector.tokenize(par.strip())
-    for par in newlines.split(text.strip()) if alpha.search(par)
-  ))
+  sents = [title] + [
+    sent
+    for par in newlines.split(text.strip())
+    if alpha.search(par)
+    for sent in sent_detector.tokenize(par.strip())
+    if alpha.search(sent)
+  ]
 
   tempdir = path.path(tempfile.mkdtemp('web-reader'))
   ":type: path.Path"
