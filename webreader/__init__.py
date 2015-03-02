@@ -183,6 +183,6 @@ def main(argv=sys.argv):
           article.converted = datetime.now()
   elif cmd == 'webserver':
     port = int(argv[2]) if len(argv) > 2 else None
-    app.run(debug=True, port=port)
+    app.run(port=port)
   else:
     raise Exception()
