@@ -76,6 +76,7 @@ def enqueue():
 
 @app.route('/feed')
 def feed():
+  limit = int(request.args.get('limit', 30))
   fg = FeedGenerator()
   fg.load_extension('podcast')
   fg.id('http://yz.mit.edu/audiolizard/feed')
@@ -87,8 +88,8 @@ def feed():
   with db_session.begin():
     articles = db_session.query(Article)\
       .filter(Article.converted != None)\
-      .order_by(Article.created)\
-      .limit(30)
+      .order_by(Article.created.desc())\
+      .limit(limit)
     for article in articles:
       fe = fg.add_entry()
       fe.id('http://yz.mit.edu/audiolizard/mp3/%s' % article.id)
