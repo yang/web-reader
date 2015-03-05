@@ -43,7 +43,7 @@ Base = declarative_base()
 class Article(Base):
   __tablename__ = 'articles'
   id = sa.Column(sa.Integer, primary_key=True)
-  url = sa.Column(sa.String, nullable=False)
+  url = sa.Column(sa.String)
   created = sa.Column(sa.DateTime, nullable=False)
   title = sa.Column(sa.String)
   body = sa.Column(sa.String)
@@ -67,8 +67,9 @@ def extract(html):
 @app.route('/api/v1/enqueue')
 def enqueue():
   with db_session.begin():
-    url = request.args['url']
-    article = Article(url=url, created=datetime.now())
+    url = request.args.get('url')
+    body = request.args.get('body') or None
+    article = Article(url=url, body=body, created=datetime.now())
     db_session.add(article)
     db_session.flush()
     queue.put(dict(article_id=article.id))
@@ -93,7 +94,7 @@ def feed():
     for article in articles:
       fe = fg.add_entry()
       fe.id('http://yz.mit.edu/audiolizard/mp3/%s' % article.id)
-      fe.title(article.title)
+      fe.title(article.title or article.body[:100])
       fe.description(article.body)
       fe.link(href=article.url)
       fe.enclosure('http://yz.mit.edu/audiolizard/mp3/%s' % article.id, 0, 'audio/mpeg')
@@ -114,10 +115,13 @@ def convert(url, outpath):
   text = ftfy.fix_text(raw_text)
   title = ftfy.fix_text(raw_title)
 
-  sents = [title] + [
+  return convert_text(title, text, outpath)
+
+def convert_text(title, text, outpath):
+  sents = [
     sent
-    for par in newlines.split(text.strip())
-    if alpha.search(par)
+    for par in [title] + newlines.split(text.strip())
+    if par and alpha.search(par)
     for sent in sent_detector.tokenize(par.strip())
     if alpha.search(sent)
   ]
@@ -180,7 +184,10 @@ def main(argv=sys.argv):
         task = queue.get()
         if task is not None:
           article = db_session.query(Article).get(task.data['article_id'])
-          article.title, article.body = convert(article.url, mp3path(article))
+          if article.body is not None:
+            convert_text(None, article.body, mp3path(article))
+          else:
+            article.title, article.body = convert(article.url, mp3path(article))
           article.converted = datetime.now()
   elif cmd == 'webserver':
     port = int(argv[2]) if len(argv) > 2 else None
