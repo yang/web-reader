@@ -72,8 +72,8 @@ def enqueue():
     article = Article(url=url, body=body, created=datetime.now())
     db_session.add(article)
     db_session.flush()
-    queue.put(dict(article_id=article.id))
-    return flask.jsonify(done=True)
+  queue.put(dict(article_id=article.id))
+  return flask.jsonify(done=True)
 
 @app.route('/feed')
 def feed():
