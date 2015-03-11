@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from datetime import datetime
 import logging
 import re
@@ -117,27 +119,48 @@ def convert(url, outpath):
 
   return convert_text(title, text, outpath)
 
+splitters = [
+    re.compile(r'[:;]| -+ |\.{2,}|--+|—'),
+    re.compile(r'[,]'),
+]
+
+# Experimentally determined that the API tolerates up to 250 words, where words
+# are any non-white-space text.  Hence, "hello . world ." is 4 words, and
+# "hello-world" is one word.
+def segments(sent):
+  if len(sent.split()) <= 250:
+    yield sent
+  else:
+    splits = splitters[0].split(sent)
+    for split in splits:
+      if len(split.split()) <= 250:
+        yield split
+      else:
+        yield 'warning: audio lizard phrase too long'
+
 def convert_text(title, text, outpath):
-  sents = [
-    sent
+  segs = [
+    seg
     for par in [title] + newlines.split(text.strip())
     if par and alpha.search(par)
     for sent in sent_detector.tokenize(par.strip())
     if alpha.search(sent)
+    for seg in segments(sent)
+    if alpha.search(seg)
   ]
 
   tempdir = path.path(tempfile.mkdtemp('web-reader'))
   ":type: path.Path"
 
-  log.info('spooling %s sentences to temp dir %s', len(sents), tempdir)
-  for i, sent in enumerate(sents):
+  log.info('spooling %s sentences to temp dir %s', len(segs), tempdir)
+  for i, seg in enumerate(segs):
     params = dict(
       format='mp3',
       action='convert',
       apikey='59e482ac28dd52db23a22aff4ac1d31e',
       speed='0',
       voice='usenglishfemale',
-      text=sent
+      text=seg
     )
     resp = requests.get('http://api.ispeech.org/api/rest', params=params)
     ":type: requests.Response"
@@ -145,7 +168,7 @@ def convert_text(title, text, outpath):
 
   combined = reduce(
     lambda x,y: x + pydub.AudioSegment.silent(500) + y,
-    (pydub.AudioSegment.from_mp3(tempdir / ('%s.mp3' % i)) for i in xrange(len(sents)))
+    (pydub.AudioSegment.from_mp3(tempdir / ('%s.mp3' % i)) for i in xrange(len(segs)))
   )
   ":type: pydub.AudioSegment"
   combined.export(outpath, format='mp3')
