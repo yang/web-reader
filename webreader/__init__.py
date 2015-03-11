@@ -110,7 +110,7 @@ def mp3(article_id):
       return flask.Response(f.read(), mimetype='audio/mpeg')
 
 def convert(url, outpath):
-  resp = requests.get(url)
+  resp = requests.get(url, verify=False)
   ":type: requests.Response"
 
   raw_title, raw_text = extract(resp.content)
