@@ -24,6 +24,8 @@ from sqlalchemy.orm.session import sessionmaker
 
 __author__ = 'yang'
 
+UA = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'
+
 app = flask.Flask(__name__)
 
 log = logging.getLogger(__name__)
@@ -110,7 +112,7 @@ def mp3(article_id):
       return flask.Response(f.read(), mimetype='audio/mpeg')
 
 def convert(url, outpath):
-  resp = requests.get(url, verify=False)
+  resp = requests.get(url, verify=False, headers={'user-agent': UA})
   ":type: requests.Response"
 
   raw_title, raw_text = extract(resp.content)
