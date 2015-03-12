@@ -21,6 +21,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.declarative.api import declarative_base
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
+from flask.ext.cors import cross_origin
 
 __author__ = 'yang'
 
@@ -68,11 +69,14 @@ def extract(html):
 
   return title, bp_text if len(bp_text) > len(gs_text) else gs_text
 
-@app.route('/api/v1/enqueue')
+@app.route('/api/v1/enqueue', methods=['GET','POST'])
+@cross_origin()
 def enqueue():
+  data = request.args if request.method == 'GET' else request.get_json()
   with db_session.begin():
-    url = request.args.get('url')
-    body = request.args.get('body') or None
+    import pprint; pprint.pprint(data)
+    url = data.get('url')
+    body = data.get('body') or None
     article = Article(url=url, body=body, created=datetime.now())
     db_session.add(article)
     db_session.flush()
@@ -216,6 +220,7 @@ def main(argv=sys.argv):
           article.converted = datetime.now()
   elif cmd == 'webserver':
     port = int(argv[2]) if len(argv) > 2 else None
+    app.config['CORS_HEADERS'] = 'Content-Type'
     app.run(port=port)
   else:
     raise Exception()
