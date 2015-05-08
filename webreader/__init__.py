@@ -213,11 +213,15 @@ def main(argv=sys.argv):
         task = queue.get()
         if task is not None:
           article = db_session.query(Article).get(task.data['article_id'])
-          if article.body is not None:
-            convert_text(None, article.body, mp3path(article))
+          try:
+            if article.body is not None:
+              convert_text(None, article.body, mp3path(article))
+            else:
+              article.title, article.body = convert(article.url, mp3path(article))
+          except:
+            log.exception('error processing article')
           else:
-            article.title, article.body = convert(article.url, mp3path(article))
-          article.converted = datetime.now()
+            article.converted = datetime.now()
   elif cmd == 'webserver':
     port = int(argv[2]) if len(argv) > 2 else None
     app.config['CORS_HEADERS'] = 'Content-Type'
