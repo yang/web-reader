@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 
+"""
+SoundGecko clone - a web app to convert web pages to an MP3 podcast feed.
+"""
+
+from argparse import ArgumentParser
+
 from datetime import datetime
 import logging
 import re
@@ -191,14 +197,24 @@ def mp3path(article):
 
 def main(argv=sys.argv):
   global engine, db_session, pq, queue
+
+  p = ArgumentParser(description=__doc__)
+  subparsers = p.add_subparsers(help='sub-command help', dest='cmd')
+  init_p = subparsers.add_parser('init')
+  converter_p = subparsers.add_parser('converter')
+  webserver_p = subparsers.add_parser('webserver')
+
+  webserver_p.add_argument('-p', '--port', type=int,
+                           help='Web server listen port')
+
+  cfg = p.parse_args(argv[1:])
+  cmd = cfg.cmd
+
   engine = create_engine('postgresql://webreader@localhost/webreader')
   pq = PQ(engine.raw_connection())
   db_session = scoped_session(sessionmaker(autocommit=True,
                                            autoflush=False,
                                            bind=engine))
-  cmd = 'webserver'
-  if len(argv) > 1:
-    cmd = argv[1]
 
   if cmd == 'init':
     mp3dir.makedirs_p()
@@ -223,8 +239,7 @@ def main(argv=sys.argv):
           else:
             article.converted = datetime.now()
   elif cmd == 'webserver':
-    port = int(argv[2]) if len(argv) > 2 else None
     app.config['CORS_HEADERS'] = 'Content-Type'
-    app.run(port=port)
+    app.run(port=cfg.port)
   else:
     raise Exception()
