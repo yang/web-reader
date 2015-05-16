@@ -7,10 +7,14 @@ SoundGecko clone - a web app to convert web pages to an MP3 podcast feed.
 from argparse import ArgumentParser
 
 from datetime import datetime
+from email.mime.text import MIMEText
 import logging
 import re
+from smtplib import SMTP
 import sys
 import tempfile
+import traceback
+import socket
 from feedgen.feed import FeedGenerator
 import nltk
 from pq import PQ
@@ -207,6 +211,11 @@ def main(argv=sys.argv):
   webserver_p.add_argument('-p', '--port', type=int,
                            help='Web server listen port')
 
+  converter_p.add_argument('-t', '--to',
+                           help='Email to send notifications to (sent only if this is set)')
+  converter_p.add_argument('-f', '--from', default='audiolizard@' + socket.getfqdn(),
+                           help='Email to send notifications as')
+
   cfg = p.parse_args(argv[1:])
   cmd = cfg.cmd
 
@@ -234,10 +243,23 @@ def main(argv=sys.argv):
               convert_text(None, article.body, mp3path(article))
             else:
               article.title, article.body = convert(article.url, mp3path(article))
-          except:
+          except Exception as ex:
             log.exception('error processing article')
+            subj = 'AudioLizard | Error processing article'
+            msg = '\n\n'.join([article.url, traceback.format_exc(), article.body or ''])
           else:
             article.converted = datetime.now()
+            subj = 'AudioLizard | %s' % article.title
+            msg = '\n\n'.join([article.title, article.url, article.body])
+          finally:
+            if cfg.to:
+              msg = MIMEText(msg)
+              msg['Subject'] = subj
+              msg['To'] = cfg.to
+              msg['From'] = getattr(cfg, 'from')
+              s = SMTP('localhost')
+              s.sendmail(getattr(cfg, 'from'), [cfg.to], msg.as_string())
+              s.quit()
   elif cmd == 'webserver':
     app.config['CORS_HEADERS'] = 'Content-Type'
     app.run(port=cfg.port)
