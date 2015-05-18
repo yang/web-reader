@@ -186,6 +186,7 @@ def convert_text(title, text, outpath):
     lambda x,y: x + pydub.AudioSegment.silent(500) + y,
     (pydub.AudioSegment.from_mp3(tempdir / ('%s.mp3' % i)) for i in xrange(len(segs)))
   )
+  combined = combined + pydub.AudioSegment.silent(2000)
   ":type: pydub.AudioSegment"
   combined.export(outpath, format='mp3')
 
@@ -238,6 +239,7 @@ def main(argv=sys.argv):
         task = queue.get()
         if task is not None:
           article = db_session.query(Article).get(task.data['article_id'])
+          msg = ''
           try:
             if article.body is not None:
               convert_text(None, article.body, mp3path(article))
