@@ -10,7 +10,7 @@ Install prerequisites:
 
     sudo apt-get install postgresql-9.4 libav-tools ubuntu-restricted-extras
 
-(You may want to see how to install [later versions of Postgresql][pgdg] on your Ubuntu system, which is needed for JSON support required by [PQ].)
+(You may want to see how to install [later versions of Postgresql][pgdg] on your Ubuntu system, which is needed for JSON support required by [PQ], esp. if you're using e.g. Ubuntu 12.04.)
 
 In this source dir, install the application (e.g. into a virtualenv):
 
@@ -36,11 +36,17 @@ One-time: run `web-reader init` to set up the DB and MP3 dir.
 
 Run the web server with just `web-reader`.
 
-Submit a web page with <http://localhost:5000/api/v1/enqueue?url=SOMEURL>.
-
 Run the converter daemon with `web-reader converter`.
 
-Check the output Podcast RSS feed with <http://localhost:5000/feed>.
+Try submitting a web page with <http://localhost:5000/api/v1/enqueue?url=SOMEURL>.
+
+For normal on-going use, you can use a handy bookmarklet for one-click submission of your current page.  It tries to extract the main body content by default, but you can also just have some text on the page already selected when you press the bookmarklet to process just that selection:
+
+    javascript:var r=new XMLHttpRequest();try{r.open('POST','http://localhost:5000/api/v1/enqueue',false);r.setRequestHeader("Content-Type", "application/json;charset=UTF-8");r.send(JSON.stringify({url:document.location.href,body:window.getSelection?window.getSelection().toString():document.selection.createRange().text}));alert('done');}catch(e){alert('failed');}
+
+Finally, you can reap the fruits by subscribing to the output Podcast RSS feed with <http://localhost:5000/feed>.
+
+In all of the above, you should replace `localhost:5000` with whatever final server you're hosting on.
 
 ## How It Works
 
