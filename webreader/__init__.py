@@ -203,6 +203,9 @@ def mp3path(article):
 def main(argv=sys.argv):
   global engine, db_session, pq, queue
 
+  logging.basicConfig()
+  log.setLevel(logging.INFO)
+
   p = ArgumentParser(description=__doc__)
   subparsers = p.add_subparsers(help='sub-command help', dest='cmd')
   init_p = subparsers.add_parser('init')
@@ -219,6 +222,8 @@ def main(argv=sys.argv):
 
   cfg = p.parse_args(argv[1:])
   cmd = cfg.cmd
+
+  log.info('command-line config: %r', cfg)
 
   engine = create_engine('postgresql://webreader@localhost/webreader')
   pq = PQ(engine.raw_connection())
