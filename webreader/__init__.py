@@ -73,11 +73,15 @@ def extract(html):
   extractor = Extractor(extractor='ArticleExtractor', html=html)
   bp_text = extractor.getText()
 
-  extracted = goose.extract(raw_html=html)
-  gs_text = extracted.cleaned_text
-  title = extracted.title
-
-  return title, bp_text if len(bp_text) > len(gs_text) else gs_text
+  try:
+    extracted = goose.extract(raw_html=html)
+  except IndexError:
+    # Tolerate https://github.com/grangier/python-goose/issues/194
+    return '', bp_text
+  else:
+    gs_text = extracted.cleaned_text
+    title = extracted.title
+    return title, bp_text if len(bp_text) > len(gs_text) else gs_text
 
 @app.route('/api/v1/enqueue', methods=['GET','POST'])
 @cross_origin()
@@ -131,7 +135,7 @@ def convert(url, outpath):
 
   raw_title, raw_text = extract(resp.content)
   text = ftfy.fix_text(raw_text)
-  title = ftfy.fix_text(raw_title)
+  title = ftfy.fix_text(raw_title) if len(raw_title.strip()) > 0 else ''
 
   return convert_text(title, text, outpath)
 
