@@ -260,7 +260,7 @@ def main(argv=sys.argv):
             msg = '\n\n'.join([article.title, article.url, article.body])
           finally:
             if cfg.to:
-              msg = MIMEText(msg)
+              msg = MIMEText(msg, 'plain', 'utf-8')
               msg['Subject'] = subj
               msg['To'] = cfg.to
               msg['From'] = getattr(cfg, 'from')
