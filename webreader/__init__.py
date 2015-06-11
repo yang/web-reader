@@ -248,6 +248,7 @@ def main(argv=sys.argv):
         task = queue.get()
         if task is not None:
           article = db_session.query(Article).get(task.data['article_id'])
+          log.info('processing %s', article.url)
           msg = ''
           try:
             if article.body is not None:
