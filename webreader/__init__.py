@@ -261,8 +261,8 @@ def main(argv=sys.argv):
             msg = '\n\n'.join([article.url, traceback.format_exc(), article.body or ''])
           else:
             article.converted = datetime.now()
-            subj = 'AudioLizard | %s' % article.title
-            msg = '\n\n'.join([article.title, article.url, article.body])
+            subj = 'AudioLizard | %s' % article.title or article.url
+            msg = '\n\n'.join([article.title or '', article.url, article.body or ''])
           finally:
             if cfg.to:
               msg = MIMEText(msg, 'plain', 'utf-8')
