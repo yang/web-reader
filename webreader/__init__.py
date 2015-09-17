@@ -131,8 +131,7 @@ def mp3(article_id):
       return flask.Response(f.read(), mimetype='audio/mpeg')
 
 def convert(url, outpath):
-  resp = requests.get(url, verify=False, headers={'user-agent': UA}, timeout=30)
-  ":type: requests.Response"
+  resp = get_with_retries(url, verify=False, headers={'user-agent': UA})
 
   raw_title, raw_text = extract(resp.content)
   text = ftfy.fix_text(raw_text)
@@ -183,18 +182,7 @@ def convert_text(title, text, outpath):
       voice='usenglishfemale',
       text=seg
     )
-    for trial in xrange(3):
-      try:
-        resp = requests.get('http://api.ispeech.org/api/rest', params=params, timeout=30)
-        ":type: requests.Response"
-      except:
-        log.warn('used trial #%s of 3 on text: %s', trial + 1, seg)
-        a,b,c = sys.exc_info()
-        if trial + 1 < 3: time.sleep(5)
-      else:
-        break
-    else:
-      raise a,b,c
+    resp = get_with_retries('http://api.ispeech.org/api/rest', params=params, debug_desc=seg)
     (tempdir / ('%s.mp3' % i)).write_bytes(resp.content)
 
   combined = reduce(
@@ -206,6 +194,23 @@ def convert_text(title, text, outpath):
   combined.export(outpath, format='mp3')
 
   return title, text
+
+def get_with_retries(url, debug_desc=None, **kw):
+  """
+  :param debug_desc: What to print instead of the URL when logging retries.
+  :rtype: requests.Response
+  """
+  for trial in xrange(3):
+    try:
+      return requests.get(url, timeout=30, **kw)
+    except:
+      log.warn('used trial #%s of 3 on %s', trial + 1, debug_desc or url)
+      a, b, c = sys.exc_info()
+      if trial + 1 < 3: time.sleep(5)
+    else:
+      break
+  else:
+    raise a, b, c
 
 def init_db():
   Base.metadata.drop_all(bind=engine)
