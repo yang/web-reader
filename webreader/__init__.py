@@ -32,6 +32,7 @@ from sqlalchemy.ext.declarative.api import declarative_base
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
 from flask.ext.cors import cross_origin
+import time
 
 __author__ = 'yang'
 
@@ -182,8 +183,18 @@ def convert_text(title, text, outpath):
       voice='usenglishfemale',
       text=seg
     )
-    resp = requests.get('http://api.ispeech.org/api/rest', params=params, timeout=30)
-    ":type: requests.Response"
+    for trial in xrange(3):
+      try:
+        resp = requests.get('http://api.ispeech.org/api/rest', params=params, timeout=30)
+        ":type: requests.Response"
+      except:
+        log.warn('used trial #%s of 3 on text: %s', trial + 1, seg)
+        a,b,c = sys.exc_info()
+        if trial + 1 < 3: time.sleep(5)
+      else:
+        break
+    else:
+      raise a,b,c
     (tempdir / ('%s.mp3' % i)).write_bytes(resp.content)
 
   combined = reduce(
