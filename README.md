@@ -2,15 +2,31 @@
 
 A quick-and-dirty SoundGecko replacement!
 
-Tested on Ubuntu 12.04.
+Tested on Ubuntu 12.04 and OS X 10.10 Yosemite.
 
 ## Installation
 
-Install prerequisites:
+### Ubuntu
+
+Install prerequisites on Ubuntu:
 
     sudo apt-get install postgresql-9.4 libav-tools ubuntu-restricted-extras
 
 (You may want to see how to install [later versions of Postgresql][pgdg] on your Ubuntu system, which is needed for JSON support required by [PQ], esp. if you're using e.g. Ubuntu 12.04.)
+
+Also install Java.
+
+### OS X
+
+Install prerequisites on OS X:
+
+    sudo port install postgresql95-server postgresql95
+
+Also install Java, making sure you [fix Java >6] so `import boilerpipe` works.
+
+[fix Java >6]: https://stackoverflow.com/questions/19563766/eclipse-kepler-for-os-x-mavericks-request-java-se-6/19594116#19594116
+
+### General
 
 In this source dir, install the application (e.g. into a virtualenv):
 
@@ -32,6 +48,8 @@ Create the necessary postgresql user and DB (and store the password in your [pgp
 
 ## Usage
 
+### Basic App Server
+
 One-time: run `web-reader init` to set up the DB and MP3 dir.
 
 Run the web server with just `web-reader`.
@@ -47,6 +65,16 @@ For normal on-going use, you can use a handy bookmarklet for one-click submissio
 Finally, you can reap the fruits by subscribing to the output Podcast RSS feed with <http://localhost:5000/feed>.
 
 In all of the above, you should replace `localhost:5000` with whatever final server you're hosting on.
+
+### Extended App Server Setup
+
+To make your app server run at system startup, you can use something like the following Upstart scripts:
+
+https://github.com/yang/personal-cm/tree/master/roles/webreader/etc/init
+
+To make your web server accessible outside your firewall, [localtunnel] is a quick solution.
+
+[localtunnel]: http://localtunnel.me/
 
 ## How It Works
 
