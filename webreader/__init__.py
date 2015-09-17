@@ -231,6 +231,7 @@ def main(argv=sys.argv):
   init_p = subparsers.add_parser('init')
   converter_p = subparsers.add_parser('converter')
   webserver_p = subparsers.add_parser('webserver')
+  convert_p = subparsers.add_parser('convert')
 
   webserver_p.add_argument('-p', '--port', type=int,
                            help='Web server listen port')
@@ -239,6 +240,9 @@ def main(argv=sys.argv):
                            help='Email to send notifications to (sent only if this is set)')
   converter_p.add_argument('-f', '--from', default='audiolizard@' + socket.getfqdn(),
                            help='Email to send notifications as')
+
+  convert_p.add_argument('url', help='URL to fetch')
+  convert_p.add_argument('outpath', help='Output MP3 path')
 
   cfg = p.parse_args(argv[1:])
   cmd = cfg.cmd
@@ -291,5 +295,7 @@ def main(argv=sys.argv):
   elif cmd == 'webserver':
     app.config['CORS_HEADERS'] = 'Content-Type'
     app.run(port=cfg.port)
+  elif cmd == 'convert':
+    convert(cfg.url, cfg.outpath)
   else:
     raise Exception()

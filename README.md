@@ -48,6 +48,16 @@ Create the necessary postgresql user and DB (and store the password in your [pgp
 
 ## Usage
 
+### Converting Single Document
+
+Run:
+
+    web-reader convert URL OUTMP3
+
+For example:
+
+    web-reader convert https://medium.com/@AnandWrites/209ffc24ab90 aspen.mp3
+
 ### Basic App Server
 
 One-time: run `web-reader init` to set up the DB and MP3 dir.
