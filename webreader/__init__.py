@@ -130,7 +130,7 @@ def mp3(article_id):
       return flask.Response(f.read(), mimetype='audio/mpeg')
 
 def convert(url, outpath):
-  resp = requests.get(url, verify=False, headers={'user-agent': UA})
+  resp = requests.get(url, verify=False, headers={'user-agent': UA}, timeout=30)
   ":type: requests.Response"
 
   raw_title, raw_text = extract(resp.content)
@@ -182,7 +182,7 @@ def convert_text(title, text, outpath):
       voice='usenglishfemale',
       text=seg
     )
-    resp = requests.get('http://api.ispeech.org/api/rest', params=params)
+    resp = requests.get('http://api.ispeech.org/api/rest', params=params, timeout=30)
     ":type: requests.Response"
     (tempdir / ('%s.mp3' % i)).write_bytes(resp.content)
 
