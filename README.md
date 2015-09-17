@@ -58,6 +58,10 @@ For example:
 
     web-reader convert https://medium.com/@AnandWrites/209ffc24ab90 aspen.mp3
 
+You can also select a local plain-text file:
+
+    web-reader convert-file ~/Documents/article.txt article.mp3
+
 ### Basic App Server
 
 One-time: run `web-reader init` to set up the DB and MP3 dir.

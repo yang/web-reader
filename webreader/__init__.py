@@ -232,6 +232,7 @@ def main(argv=sys.argv):
   converter_p = subparsers.add_parser('converter')
   webserver_p = subparsers.add_parser('webserver')
   convert_p = subparsers.add_parser('convert')
+  convert_file_p = subparsers.add_parser('convert-file')
 
   webserver_p.add_argument('-p', '--port', type=int,
                            help='Web server listen port')
@@ -243,6 +244,9 @@ def main(argv=sys.argv):
 
   convert_p.add_argument('url', help='URL to fetch')
   convert_p.add_argument('outpath', help='Output MP3 path')
+
+  convert_file_p.add_argument('path', help='Text file to read')
+  convert_file_p.add_argument('outpath', help='Output MP3 path')
 
   cfg = p.parse_args(argv[1:])
   cmd = cfg.cmd
@@ -297,5 +301,7 @@ def main(argv=sys.argv):
     app.run(port=cfg.port)
   elif cmd == 'convert':
     convert(cfg.url, cfg.outpath)
+  elif cmd == 'convert-file':
+    convert_text(None, open(cfg.path).read(), cfg.outpath)
   else:
     raise Exception()
