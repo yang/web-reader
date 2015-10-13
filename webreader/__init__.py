@@ -26,6 +26,7 @@ import pydub
 import path
 from goose import Goose
 import ftfy
+from slugify.slugify import slugify
 import sqlalchemy as sa
 from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.declarative.api import declarative_base
@@ -127,8 +128,12 @@ def feed():
 def mp3(article_id):
   with db_session.begin():
     article = db_session.query(Article).get(article_id)
+    slug = slugify(article.title or article.body, max_length=256,
+                   word_boundary=True, save_order=True)
+    filename = '%s - %s.mp3' % (article_id, slug)
     with open(mp3path(article)) as f:
-      return flask.Response(f.read(), mimetype='audio/mpeg')
+      return flask.Response(f.read(), mimetype='audio/mpeg',
+          headers={"Content-Disposition": "attachment; filename=%s" % filename})
 
 def convert(url, outpath):
   resp = get_with_retries(url, verify=False, headers={'user-agent': UA})

@@ -30,6 +30,7 @@ setup(
     # <http://stackoverflow.com/a/30438722/43118>.
     'requests[security]==2.7.0',
     'sqlalchemy==0.9.8',
+    'python-slugify==1.1.4',
   ]
 )
 
