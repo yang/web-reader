@@ -205,6 +205,7 @@ def get_with_retries(url, debug_desc=None, **kw):
   :param debug_desc: What to print instead of the URL when logging retries.
   :rtype: requests.Response
   """
+  a, b, c = None, None, None # just to silence pycharm code check
   for trial in xrange(3):
     try:
       return requests.get(url, timeout=30, **kw)
@@ -212,8 +213,6 @@ def get_with_retries(url, debug_desc=None, **kw):
       log.warn('used trial #%s of 3 on %s', trial + 1, debug_desc or url)
       a, b, c = sys.exc_info()
       if trial + 1 < 3: time.sleep(5)
-    else:
-      break
   else:
     raise a, b, c
 
