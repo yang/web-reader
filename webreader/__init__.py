@@ -297,15 +297,15 @@ def main(argv=sys.argv):
             article.converted = datetime.now()
             subj = 'AudioLizard | %s' % article.title or article.url
             msg = '\n\n'.join([article.title or '', article.url, article.body or ''])
-          finally:
-            if cfg.to:
-              msg = MIMEText(msg, 'plain', 'utf-8')
-              msg['Subject'] = subj
-              msg['To'] = cfg.to
-              msg['From'] = getattr(cfg, 'from')
-              s = SMTP('localhost')
-              s.sendmail(getattr(cfg, 'from'), [cfg.to], msg.as_string())
-              s.quit()
+          if cfg.to:
+            msg = MIMEText(msg, 'plain', 'utf-8')
+            msg['Subject'] = subj
+            msg['To'] = cfg.to
+            msg['From'] = getattr(cfg, 'from')
+            print subj
+            s = SMTP('localhost')
+            s.sendmail(getattr(cfg, 'from'), [cfg.to], msg.as_string())
+            s.quit()
   elif cmd == 'webserver':
     app.config['CORS_HEADERS'] = 'Content-Type'
     if cfg.secret: app.config['secret'] = cfg.secret
