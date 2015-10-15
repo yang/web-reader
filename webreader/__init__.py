@@ -89,6 +89,8 @@ def extract(html):
 @cross_origin()
 def enqueue():
   data = request.args if request.method == 'GET' else request.get_json()
+  if app.config.get('secret') != data.get('secret'):
+    raise Exception('secret does not match!')
   with db_session.begin():
     import pprint; pprint.pprint(data)
     url = data.get('url')
@@ -242,6 +244,8 @@ def main(argv=sys.argv):
 
   webserver_p.add_argument('-p', '--port', type=int,
                            help='Web server listen port')
+  webserver_p.add_argument('-s', '--secret',
+                           help='Optional parameter `secret` to restrict enqueuing')
 
   converter_p.add_argument('-t', '--to',
                            help='Email to send notifications to (sent only if this is set)')
@@ -304,6 +308,7 @@ def main(argv=sys.argv):
               s.quit()
   elif cmd == 'webserver':
     app.config['CORS_HEADERS'] = 'Content-Type'
+    if cfg.secret: app.config['secret'] = cfg.secret
     app.run(port=cfg.port)
   elif cmd == 'convert':
     convert(cfg.url, cfg.outpath)
