@@ -228,6 +228,14 @@ def init_db():
 def mp3path(article):
   return mp3dir / ('%s.mp3' % article.id)
 
+def create_session():
+  engine = create_engine('postgresql://webreader@localhost/webreader')
+  pq = PQ(engine.raw_connection())
+  db_session = scoped_session(sessionmaker(autocommit=True,
+                                           autoflush=False,
+                                           bind=engine))
+  return pq, db_session
+
 def main(argv=sys.argv):
   global engine, db_session, pq, queue
 
@@ -263,11 +271,7 @@ def main(argv=sys.argv):
 
   log.info('command-line config: %r', cfg)
 
-  engine = create_engine('postgresql://webreader@localhost/webreader')
-  pq = PQ(engine.raw_connection())
-  db_session = scoped_session(sessionmaker(autocommit=True,
-                                           autoflush=False,
-                                           bind=engine))
+  pq, db_session = create_session()
 
   if cmd == 'init':
     mp3dir.makedirs_p()
