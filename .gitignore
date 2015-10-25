@@ -1,1 +1,3 @@
-.idea/deployment.xml
+/.idea/workspace.xml
+*.egg-info/
+*.pyc
