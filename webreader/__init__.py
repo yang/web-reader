@@ -108,7 +108,7 @@ def enqueue():
     import pprint; pprint.pprint(data)
     url = data.get('url')
     body = data.get('body') or None
-    if (url or '').strip() == '' or (body or '').strip() == '':
+    if (url or '').strip() == '' and (body or '').strip() == '':
       raise Exception('must provide at least url or body')
     article = Article(url=url, body=body, created=datetime.now())
     db_session.add(article)
