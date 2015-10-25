@@ -4,7 +4,7 @@
 SoundGecko clone - a web app to convert web pages to an MP3 podcast feed.
 """
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 
 from datetime import datetime
 from email.mime.text import MIMEText
@@ -36,6 +36,19 @@ from flask.ext.cors import cross_origin
 import time
 
 __author__ = 'yang'
+
+def valid_date(s):
+  """
+  From <https://stackoverflow.com/questions/25470844/specify-format-for-input-arguments-argparse-python>
+  :param s: The input string to parse as YYYY-MM-DD.
+  :type s: str
+  :return: The parsed date.
+  :rtype: datetime.date
+  """
+  try:
+    return datetime.strptime(s, "%Y-%m-%d")
+  except ValueError:
+    raise ArgumentTypeError("Not a valid date: %r." % (s,))
 
 UA = 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36'
 
@@ -236,6 +249,50 @@ def create_session():
                                            bind=engine))
   return pq, db_session
 
+def trunc_txt(s, max_chars=100):
+  return s if len(s) < max_chars else s[:max_chars - 3] + '...'
+
+def resubmit(base_url, sort_order, limit=None, min_date=None):
+  pg, ses = create_session()
+  failures = ses.connection().execute(
+    sa.text('''
+      with
+        pure_url_failures as (
+          select max(created) as created, url, null::text as body
+          from articles
+          where coalesce(body, '') = ''
+          group by url
+          having bool_and(converted is null)
+          order by max(created) desc
+        ),
+        body_failures as (
+          -- find the body submissions, treating these all as distinct (even if they
+          -- share the same URL)
+          select created, url, body
+          from articles
+            where converted is null and coalesce(body, '') != ''
+          order by created desc
+        ),
+        all_failures as (
+          select * from pure_url_failures
+          union
+          select * from body_failures
+        ),
+        ordered_failures as (
+          select * from all_failures
+          where :min_created is null or created >= :min_created
+          order by created %(sort_order)s
+          limit :limit
+        )
+      select * from ordered_failures;
+    ''' % dict(sort_order=sort_order)),
+    min_created=min_date,
+    limit=limit,
+  ).fetchall()
+  for created, url, body in failures:
+    log.info('submitting URL %s body %r', url, trunc_txt(body or ''))
+    requests.get(path.path(base_url) / 'api/v1/enqueue', params=dict(url=url, body=body))
+
 def main(argv=sys.argv):
   global engine, db_session, pq, queue
 
@@ -249,6 +306,7 @@ def main(argv=sys.argv):
   webserver_p = subparsers.add_parser('webserver')
   convert_p = subparsers.add_parser('convert')
   convert_file_p = subparsers.add_parser('convert-file')
+  resubmit_p = subparsers.add_parser('resubmit')
 
   webserver_p.add_argument('-p', '--port', type=int,
                            help='Web server listen port')
@@ -265,6 +323,15 @@ def main(argv=sys.argv):
 
   convert_file_p.add_argument('path', help='Text file to read')
   convert_file_p.add_argument('outpath', help='Output MP3 path')
+
+  resubmit_p.add_argument('-n', '--limit', type=int, default=10,
+                          help='Limit to resubmitting this many failures')
+  resubmit_p.add_argument('-d', '--min-date', type=valid_date,
+                          help='Only resubmit failures on/after this date')
+  resubmit_p.add_argument('-o', '--order', choices=['oldest','newest'], default='newest',
+                          help='Whether to resubmit oldest or newest first')
+  resubmit_p.add_argument('base_url',
+                          help='Where to resubmit, e.g. http://localhost:5000/ (excludes /api/...)')
 
   cfg = p.parse_args(argv[1:])
   cmd = cfg.cmd
@@ -318,5 +385,12 @@ def main(argv=sys.argv):
     convert(cfg.url, cfg.outpath)
   elif cmd == 'convert-file':
     convert_text(None, open(cfg.path).read(), cfg.outpath)
+  elif cmd == 'resubmit':
+    resubmit(
+      cfg.base_url,
+      sort_order=dict(newest='desc', oldest='asc')[cfg.order],
+      limit=cfg.limit,
+      min_date=cfg.min_date,
+    )
   else:
     raise Exception()
