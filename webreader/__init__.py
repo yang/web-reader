@@ -252,7 +252,7 @@ def create_session():
 def trunc_txt(s, max_chars=100):
   return s if len(s) < max_chars else s[:max_chars - 3] + '...'
 
-def resubmit(base_url, sort_order, limit=None, min_date=None):
+def resubmit(base_url, sort_order, pretend, limit=None, min_date=None):
   pg, ses = create_session()
   failures = ses.connection().execute(
     sa.text('''
@@ -291,7 +291,8 @@ def resubmit(base_url, sort_order, limit=None, min_date=None):
   ).fetchall()
   for created, url, body in failures:
     log.info('submitting URL %s body %r', url, trunc_txt(body or ''))
-    requests.get(path.path(base_url) / 'api/v1/enqueue', params=dict(url=url, body=body))
+    if not pretend:
+      requests.get(path.path(base_url) / 'api/v1/enqueue', params=dict(url=url, body=body))
 
 def main(argv=sys.argv):
   global engine, db_session, pq, queue
@@ -330,6 +331,8 @@ def main(argv=sys.argv):
                           help='Only resubmit failures on/after this date')
   resubmit_p.add_argument('-o', '--order', choices=['oldest','newest'], default='newest',
                           help='Whether to resubmit oldest or newest first')
+  resubmit_p.add_argument('--pretend', action='store_true',
+                          help='Only print the would-be resubmissions')
   resubmit_p.add_argument('base_url',
                           help='Where to resubmit, e.g. http://localhost:5000/ (excludes /api/...)')
 
@@ -388,6 +391,7 @@ def main(argv=sys.argv):
   elif cmd == 'resubmit':
     resubmit(
       cfg.base_url,
+      pretend=cfg.pretend,
       sort_order=dict(newest='desc', oldest='asc')[cfg.order],
       limit=cfg.limit,
       min_date=cfg.min_date,
