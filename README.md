@@ -94,6 +94,21 @@ To make your web server accessible outside your firewall, [localtunnel] is a qui
 
 [localtunnel]: http://localtunnel.me/
 
+### Resubmitting Old Failed Articles
+
+You can use the `resubmit` sub-command to retry submitting old articles that
+failed.  For instance,
+
+    web-reader resubmit http://localhost:5000 -d 2015-11-01 -o oldest -n 20
+
+will resubmit to the AudioLizard web server running on port 5000 all the URLs
+that were *ever only* failures (i.e., ignore failures that got converted
+successfully another time), limited to a batch of 20 (starting with the oldest
+first).
+
+This logic only considers distinct URLs as candidates for resubmission, which
+is usually the correct behavior.
+
 ## How It Works
 
 1. Enqueue the web article URL into a [PQ] queue.
