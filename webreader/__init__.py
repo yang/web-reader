@@ -254,37 +254,19 @@ def trunc_txt(s, max_chars=100):
 
 def resubmit(base_url, sort_order, pretend, limit=None, min_date=None):
   pg, ses = create_session()
+  # Choose the longest body
   failures = ses.connection().execute(
     sa.text('''
-      with
-        pure_url_failures as (
-          select max(created) as created, url, null::text as body
-          from articles
-          where coalesce(body, '') = ''
-          group by url
-          having bool_and(converted is null)
-          order by max(created) desc
-        ),
-        body_failures as (
-          -- find the body submissions, treating these all as distinct (even if they
-          -- share the same URL)
-          select created, url, body
-          from articles
-            where converted is null and coalesce(body, '') != ''
-          order by created desc
-        ),
-        all_failures as (
-          select * from pure_url_failures
-          union
-          select * from body_failures
-        ),
-        ordered_failures as (
-          select * from all_failures
-          where :min_created is null or created >= :min_created
-          order by created %(sort_order)s
-          limit :limit
-        )
-      select * from ordered_failures;
+      select
+        max(created) as created,
+        url,
+        (array_agg(body order by length(body) desc))[1] as body
+      from articles
+      where trim(coalesce(url, '')) != ''
+      group by url
+      having bool_and(converted is null) and (:min_created is null or max(created) >= :min_created)
+      order by max(created) %(sort_order)s
+      limit :limit
     ''' % dict(sort_order=sort_order)),
     min_created=min_date,
     limit=limit,
