@@ -2,6 +2,8 @@
 
 A quick-and-dirty SoundGecko replacement!
 
+SoundGecko's TTS voices were my favorite, so this reuses the same engine.
+
 Tested on Ubuntu 12.04 and OS X 10.10 Yosemite.
 
 ## Installation
