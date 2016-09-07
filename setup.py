@@ -15,7 +15,9 @@ setup(
   },
   description='Simple SoundGecko replacement',
   install_requires=[
-    'boilerpipe==1.2.0.0',
+    # This hack based on
+    # <https://stackoverflow.com/questions/17366784/setuptools-unable-to-use-link-from-dependency-links/17442663#17442663>.
+    'boilerpipe<=1.3.0.0',
     'feedgen==0.3.1',
     'flask==0.10.1',
     'flask-cors==1.10.3',
@@ -31,6 +33,9 @@ setup(
     'requests[security]==2.7.0',
     'sqlalchemy==0.9.8',
     'python-slugify==1.1.4',
-  ]
+  ],
+  dependency_links=[
+    'https://github.com/migomhmi/python-boilerpipe/archive/master.zip#egg=boilerpipe-1.3.0.0',
+  ],
 )
 

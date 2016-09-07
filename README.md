@@ -34,7 +34,7 @@ Also install Java, making sure you [fix Java >6] so `import boilerpipe` works.
 
 In this source dir, install the application (e.g. into a virtualenv):
 
-    pip install .
+    pip install --process-dependency-links -e .
 
 Download nltk data:
 
