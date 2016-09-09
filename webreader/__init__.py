@@ -213,7 +213,10 @@ def convert_text(title, text, outpath):
   )
   combined = combined + pydub.AudioSegment.silent(2000)
   ":type: pydub.AudioSegment"
-  combined.export(outpath, format='mp3')
+  # -b:a gives us CBR encoding (see https://trac.ffmpeg.org/wiki/Encode/MP3).
+  # We need this because Android's built-in media seeker doesn't correctly seek in VBR
+  # (see https://code.google.com/p/android/issues/detail?id=8154).
+  combined.export(outpath, format='mp3', parameters=['-b:a','48000'])
 
   return title, text
 
