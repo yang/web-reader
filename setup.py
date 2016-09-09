@@ -27,7 +27,7 @@ setup(
     'path.py==7.2',
     'pq==1.2',
     'psycopg2==2.6',
-    'pydub==0.10.0',
+    'pydub==0.16.5',
     # The 'security' extra is to deal with SSL errors.  See
     # <http://stackoverflow.com/a/30438722/43118>.
     'requests[security]==2.7.0',
