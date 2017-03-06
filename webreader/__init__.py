@@ -34,6 +34,7 @@ from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
 from flask.ext.cors import cross_origin
 import time
+import io
 
 __author__ = 'yang'
 
@@ -372,7 +373,7 @@ def main(argv=sys.argv):
   elif cmd == 'convert':
     convert(cfg.url, cfg.outpath)
   elif cmd == 'convert-file':
-    convert_text(None, open(cfg.path).read(), cfg.outpath)
+    convert_text(None, io.open(cfg.path, encoding='utf8').read(), cfg.outpath)
   elif cmd == 'resubmit':
     resubmit(
       cfg.base_url,
