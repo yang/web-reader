@@ -229,13 +229,13 @@ def get_with_retries(url, debug_desc=None, **kw):
   a, b, c = None, None, None # just to silence pycharm code check
   details = '%s with %s' % (url, kw)
   debug_desc = '%s (%s)' % (debug_desc, details) if debug_desc else details
-  for trial in xrange(3):
+  for trial in xrange(5):
     try:
       return requests.get(url, timeout=30, **kw)
     except:
       log.warn('used trial #%s of 3 on %s', trial + 1, debug_desc)
       a, b, c = sys.exc_info()
-      if trial + 1 < 3: time.sleep(5)
+      if trial + 1 < 5: time.sleep(5)
   else:
     raise a, b, c
 
