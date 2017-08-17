@@ -119,7 +119,7 @@ def enqueue():
 
 @app.route('/feed')
 def feed():
-  limit = int(request.args.get('limit', 30))
+  limit = min(int(request.args.get('limit', 30)), 30)
   fg = FeedGenerator()
   fg.load_extension('podcast')
   fg.id('http://yz.mit.edu/audiolizard/feed')
