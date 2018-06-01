@@ -106,7 +106,7 @@ def extract(html):
 @cross_origin()
 def enqueue():
   data = request.args if request.method == 'GET' else request.get_json()
-  if app.config.get('secret') != data.get('secret'):
+  if app.config.get('secret') is not None and app.config.get('secret') != data.get('secret'):
     raise Exception('secret does not match!')
   with db_session.begin():
     import pprint; pprint.pprint(data)
@@ -122,6 +122,8 @@ def enqueue():
 
 @app.route('/feed')
 def feed():
+  if app.config.get('secret') is not None and app.config.get('secret') != request.args.get('key'):
+    raise Exception('secret does not match!')
   limit = min(int(request.args.get('limit', 30)), 30)
   fg = FeedGenerator()
   fg.load_extension('podcast')
