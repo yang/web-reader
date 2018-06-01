@@ -74,6 +74,10 @@ Run the web server with just `web-reader`.
 
 Run the converter daemon with `web-reader converter`.
 
+To enable Wavenet, run with the appropriate environment, e.g.:
+
+    GOOGLE_APPLICATION_CREDENTIALS=... web-reader converter
+
 Try submitting a web page with <http://localhost:5000/api/v1/enqueue?url=SOMEURL>.
 
 For normal on-going use, you can use a handy bookmarklet for one-click submission of your current page.  It tries to extract the main body content by default, but you can also just have some text on the page already selected when you press the bookmarklet to process just that selection:

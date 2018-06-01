@@ -3,9 +3,12 @@
 """
 SoundGecko clone - a web app to convert web pages to an MP3 podcast feed.
 """
+import base64
+import json
 
 from argparse import ArgumentParser, ArgumentTypeError
 
+import subprocess as subp
 from datetime import datetime
 from email.mime.text import MIMEText
 import logging
@@ -149,18 +152,37 @@ def mp3(article_id):
     slug = slugify(article.title or article.body, max_length=256,
                    word_boundary=True, save_order=True)
     filename = '%s - %s.mp3' % (article_id, slug)
-    with open(mp3path(article)) as f:
+    best_path = enhanced_mp3_path(article)
+    if not best_path.exists():
+      best_path = mp3path(article)
+    with open(best_path) as f:
       return flask.Response(f.read(), mimetype='audio/mpeg',
           headers={"Content-Disposition": "attachment; filename=%s" % filename})
 
-def convert(url, outpath):
+@app.route('/mp3/<int:article_id>/enhance')
+def enhance_get(article_id):
+  with db_session.begin():
+    article = db_session.query(Article).get(article_id)
+    if enhanced_mp3_path(article).exists():
+      return 'already enhanced'
+    else:
+      return '<form method="POST"><button type="submit">enhance!</button></form>'
+
+@app.route('/mp3/<int:article_id>/enhance', methods=['POST'])
+def enhance_post(article_id):
+  with db_session.begin():
+    article = db_session.query(Article).get(article_id)
+    queue.put(dict(article_id=article.id, enhanced=True))
+  return 'Done!'
+
+def convert(url, outpath, enhanced=False):
   resp = get_with_retries(url, verify=False, headers={'user-agent': UA})
 
   raw_title, raw_text = extract(resp.content)
   text = ftfy.fix_text(raw_text)
   title = ftfy.fix_text(raw_title) if len(raw_title.strip()) > 0 else ''
 
-  return convert_text(title, text, outpath)
+  return convert_text(title, text, outpath, enhanced)
 
 splitters = [
     re.compile(r'[:;]| -+ |\.{2,}|--+|—'),
@@ -181,7 +203,9 @@ def segments(sent):
       else:
         yield 'warning: audio lizard phrase too long'
 
-def convert_text(title, text, outpath):
+def convert_text(title, text, outpath, enhanced=False):
+  log.info('converting %s', title)
+
   segs = [
     seg
     for par in [title] + newlines.split(text.strip())
@@ -192,21 +216,46 @@ def convert_text(title, text, outpath):
     if alpha.search(seg)
   ]
 
+  if enhanced:
+    auth_key = subp.check_output('gcloud auth application-default print-access-token'.split()).strip()
+
   tempdir = path.path(tempfile.mkdtemp('web-reader'))
   ":type: path.Path"
 
   log.info('spooling %s sentences to temp dir %s', len(segs), tempdir)
   for i, seg in enumerate(segs):
-    params = dict(
-      format='mp3',
-      action='convert',
-      apikey='59e482ac28dd52db23a22aff4ac1d31e',
-      speed='0',
-      voice='usenglishfemale',
-      text=seg
-    )
-    resp = get_with_retries('http://api.ispeech.org/api/rest', params=params, debug_desc=seg)
-    (tempdir / ('%s.mp3' % i)).write_bytes(resp.content)
+    if enhanced:
+      headers = {
+        "Authorization": "Bearer " + auth_key,
+        "Content-Type": "application/json; charset=utf-8",
+      }
+      data = {
+        'input':{
+          'text': seg
+        },
+        'voice':{
+          'languageCode':'en-us'
+        },
+        'audioConfig':{
+          'audioEncoding':'MP3'
+        }
+      }
+      resp = post_with_retries('https://texttospeech.googleapis.com/v1beta1/text:synthesize',
+                              data=json.dumps(data), headers=headers, debug_desc=seg)
+      resp.raise_for_status()
+      data = base64.b64decode(resp.json()['audioContent'])
+      (tempdir / ('%s.mp3' % i)).write_bytes(data)
+    else:
+      params = dict(
+        format='mp3',
+        action='convert',
+        apikey='59e482ac28dd52db23a22aff4ac1d31e',
+        speed='0',
+        voice='usenglishfemale',
+        text=seg
+      )
+      resp = get_with_retries('http://api.ispeech.org/api/rest', params=params, debug_desc=seg)
+      (tempdir / ('%s.mp3' % i)).write_bytes(resp.content)
 
   combined = reduce(
     lambda x,y: x + pydub.AudioSegment.silent(500) + y,
@@ -219,9 +268,10 @@ def convert_text(title, text, outpath):
   # (see https://code.google.com/p/android/issues/detail?id=8154).
   combined.export(outpath, format='mp3', parameters=['-b:a','48000'])
 
+  log.info('done converting %s', title)
   return title, text
 
-def get_with_retries(url, debug_desc=None, **kw):
+def req_with_retries(method, url, debug_desc, **kw):
   """
   :param debug_desc: What to print instead of the URL when logging retries.
   :rtype: requests.Response
@@ -231,13 +281,18 @@ def get_with_retries(url, debug_desc=None, **kw):
   debug_desc = '%s (%s)' % (debug_desc, details) if debug_desc else details
   for trial in xrange(5):
     try:
-      return requests.get(url, timeout=30, **kw)
+      return getattr(requests, method)(url, timeout=30, **kw)
     except:
-      log.warn('used trial #%s of 3 on %s', trial + 1, debug_desc)
+      log.warn('used trial #%s of 5 on %s', trial + 1, debug_desc)
       a, b, c = sys.exc_info()
       if trial + 1 < 5: time.sleep(5)
   else:
     raise a, b, c
+
+def get_with_retries(url, debug_desc=None, **kw):
+  return req_with_retries('get', url, debug_desc, **kw)
+def post_with_retries(url, debug_desc=None, **kw):
+  return req_with_retries('post', url, debug_desc, **kw)
 
 def init_db():
   Base.metadata.drop_all(bind=engine)
@@ -246,6 +301,9 @@ def init_db():
 
 def mp3path(article):
   return mp3dir / ('%s.mp3' % article.id)
+
+def enhanced_mp3_path(article):
+  return mp3dir / ('%s-enhanced.mp3' % article.id)
 
 def create_session():
   engine = create_engine('postgresql://webreader@localhost/webreader')
@@ -306,6 +364,8 @@ def main(argv=sys.argv):
                            help='Email to send notifications to (sent only if this is set)')
   converter_p.add_argument('-f', '--from', default='audiolizard@' + socket.getfqdn(),
                            help='Email to send notifications as')
+  converter_p.add_argument('--base-url',
+                          help='The base URL to use in email links http://localhost:5000/ (excludes /api/...)')
 
   convert_p.add_argument('url', help='URL to fetch')
   convert_p.add_argument('outpath', help='Output MP3 path')
@@ -345,12 +405,13 @@ def main(argv=sys.argv):
         if task is not None:
           article = db_session.query(Article).get(task.data['article_id'])
           log.info('processing %s', article.url)
-          msg = ''
+          enhanced = bool(task.data.get('enhanced'))
+          outpath = enhanced_mp3_path(article) if enhanced else mp3path(article)
           try:
             if article.body is not None:
-              convert_text(None, article.body, mp3path(article))
+              convert_text(None, article.body, outpath, enhanced)
             else:
-              article.title, article.body = convert(article.url, mp3path(article))
+              article.title, article.body = convert(article.url, outpath, enhanced)
           except Exception as ex:
             log.exception('error processing article')
             subj = 'AudioLizard | Error processing article'
@@ -358,7 +419,9 @@ def main(argv=sys.argv):
           else:
             article.converted = datetime.now()
             subj = 'AudioLizard | %s' % article.title or article.url
-            msg = '\n\n'.join([article.title or '', article.url, article.body or ''])
+            mp3_url = path.path(cfg.base_url) / 'mp3' / str(article.id) if cfg.base_url else ''
+            enhance_url = path.path(cfg.base_url) / 'mp3' / str(article.id) / 'enhance' if cfg.base_url else ''
+            msg = '\n\n'.join(filter(None, [article.title or '', article.url, mp3_url, enhance_url, article.body or '']))
           if cfg.to:
             msg = MIMEText(msg, 'plain', 'utf-8')
             msg['Subject'] = subj
