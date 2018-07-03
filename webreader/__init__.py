@@ -66,9 +66,7 @@ goose = Goose()
 alpha = re.compile(r'[a-z]', re.IGNORECASE)
 newlines = re.compile(r'\n+')
 
-engine = None
 db_session = None
-pq = None
 queue = None
 
 mp3dir = path.path('~/.webreader/mp3s').expanduser()
@@ -296,7 +294,7 @@ def get_with_retries(url, debug_desc=None, **kw):
 def post_with_retries(url, debug_desc=None, **kw):
   return req_with_retries('post', url, debug_desc, **kw)
 
-def init_db():
+def init_db(pq, engine):
   Base.metadata.drop_all(bind=engine)
   Base.metadata.create_all(bind=engine)
   pq.create()
@@ -395,7 +393,7 @@ def main(argv=sys.argv):
 
   if cmd == 'init':
     mp3dir.makedirs_p()
-    init_db()
+    init_db(pq, db_session.bind)
     return
 
   queue = pq['articles']
