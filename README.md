@@ -10,15 +10,26 @@ Tested on Ubuntu 12.04 and OS X 10.10 Yosemite.
 
 ## Installation
 
-### Ubuntu
+### Ubuntu 18.04
 
 Install prerequisites on Ubuntu:
 
-    sudo apt-get install postgresql-9.4 libav-tools ubuntu-restricted-extras
+    sudo apt-get install \
+      postgresql-10 \
+      ffmpeg \
+      ubuntu-restricted-extras \
+      postgresql-server-dev-10 \
+      build-essential \
+      python-dev \
+      postfix
 
-(You may want to see how to install [later versions of Postgresql][pgdg] on your Ubuntu system, which is needed for JSON support required by [PQ], esp. if you're using e.g. Ubuntu 12.04.)
+Recommended: set up postfix to send via gmail:
 
-Also install Java.
+    https://www.howtoforge.com/tutorial/configure-postfix-to-use-gmail-as-a-mail-relay/
+
+Also install Java, needed for boilerpipe:
+
+    sudo apt install openjdk-11-jdk
 
 ### OS X
 
