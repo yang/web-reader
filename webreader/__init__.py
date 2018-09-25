@@ -139,8 +139,8 @@ def feed():
     for article in articles:
       fe = fg.add_entry()
       fe.id('http://yz.mit.edu/audiolizard/mp3/%s' % article.id)
-      fe.title(article.title or article.body[:100])
-      fe.description(article.body)
+      fe.title(ftfy.fix_text(article.title or article.body[:100]))
+      fe.description(ftfy.fix_text(article.body))
       fe.link(href=article.url)
       fe.enclosure('http://yz.mit.edu/audiolizard/mp3/%s' % article.id, 0, 'audio/mpeg')
     return flask.Response(fg.rss_str(pretty=True), mimetype='application/rss+xml')
