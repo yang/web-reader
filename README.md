@@ -111,8 +111,13 @@ To make your web server accessible outside your firewall, [localtunnel] is a qui
 
 ### Resubmitting Old Failed Articles
 
-You can use the `resubmit` sub-command to retry submitting old articles that
-failed.  For instance,
+You can use the `reconvert` sub-command to force certain article IDs to get
+re-processed.  This will just produce new MP3s in place.  No new feed entries
+are created.  Text won't be re-extracted - only the audio synthesis is rerun.
+
+You can also use the `resubmit` sub-command to retry submitting old articles that
+failed.  This will create new feed entries (and won't affect old entries).
+For instance,
 
     web-reader resubmit http://localhost:5000 -d 2015-11-01 -o oldest -n 20
 

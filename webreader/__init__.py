@@ -341,6 +341,24 @@ def resubmit(base_url, sort_order, pretend, limit=None, min_date=None):
     if not pretend:
       requests.get(path.path(base_url) / 'api/v1/enqueue', params=dict(url=url, body=body))
 
+def reconvert(min_id, max_id, sort_order, pretend):
+  pg, ses = create_session()
+  # Choose the longest body
+  ids = ses.connection().execute(
+    sa.text('''
+      select id
+      from articles
+      where id between :min_id and :max_id
+      order by id %(sort_order)s
+    ''' % dict(sort_order=sort_order)),
+    min_id=min_id,
+    max_id=max_id
+  ).fetchall()
+  for [id] in ids:
+    log.info('re-converting ID %s', id)
+    if not pretend:
+      queue.put(dict(article_id=id))
+
 def main(argv=sys.argv):
   global engine, db_session, pq, queue
 
@@ -355,6 +373,7 @@ def main(argv=sys.argv):
   convert_p = subparsers.add_parser('convert')
   convert_file_p = subparsers.add_parser('convert-file')
   resubmit_p = subparsers.add_parser('resubmit')
+  reconvert_p = subparsers.add_parser('reconvert')
 
   webserver_p.add_argument('-p', '--port', type=int,
                            help='Web server listen port')
@@ -384,6 +403,15 @@ def main(argv=sys.argv):
                           help='Only print the would-be resubmissions')
   resubmit_p.add_argument('base_url',
                           help='Where to resubmit, e.g. http://localhost:5000/ (excludes /api/...)')
+
+  reconvert_p.add_argument('min_id', type=int,
+                          help='Minimum ID to include')
+  reconvert_p.add_argument('max_id', type=int,
+                          help='Maximum ID to include')
+  reconvert_p.add_argument('-o', '--order', choices=['oldest','newest'], default='newest',
+                          help='Whether to reconvert oldest or newest first')
+  reconvert_p.add_argument('--pretend', action='store_true',
+                          help='Only print the would-be resubmissions')
 
   cfg = p.parse_args(argv[1:])
   cmd = cfg.cmd
@@ -447,6 +475,13 @@ def main(argv=sys.argv):
       sort_order=dict(newest='desc', oldest='asc')[cfg.order],
       limit=cfg.limit,
       min_date=cfg.min_date,
+    )
+  elif cmd == 'reconvert':
+    reconvert(
+      min_id=cfg.min_id,
+      max_id=cfg.max_id,
+      pretend=cfg.pretend,
+      sort_order=dict(newest='desc', oldest='asc')[cfg.order],
     )
   else:
     raise Exception()
