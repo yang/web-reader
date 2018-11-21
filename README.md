@@ -135,6 +135,23 @@ is usually the correct behavior.
 7. Combine the MP3s (with 500ms of silence in between sentences) using [pydub].
 8. Generate the podcast feed with [feedgen].
 
+## TTS Research
+
+The best open source TTS implementation I'm aware of:
+
+https://github.com/r9y9/wavenet_vocoder
+
+Samples: https://r9y9.github.io/wavenet_vocoder/
+
+However, it's extremely slow to synthesize (~20 minutes per second of speech on Colaboratory!).
+An open source implementation of parallel-wavenet is not there yet.
+
+More resources:
+
+- https://github.com/keithito/tacotron
+- https://www.reddit.com/r/MachineLearning/comments/8utx7o/d_best_open_source_text_to_speech_networks/
+- https://www.reddit.com/r/MachineLearning/comments/845uji/d_are_the_hyperrealistic_results_of_tacotron2_and/
+
 [PQ]: https://github.com/malthe/pq/
 [goose]: https://github.com/GravityLabs/goose
 [boilerpipe]: https://code.google.com/p/boilerpipe/
