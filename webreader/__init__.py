@@ -189,80 +189,71 @@ splitters = [
     re.compile(r'[,]'),
 ]
 
-# Experimentally determined that the API tolerates up to 250 words, where words
-# are any non-white-space text.  Hence, "hello . world ." is 4 words, and
-# "hello-world" is one word.
-def segments(sent):
-  if len(sent.split()) <= 250:
-    yield sent
-  else:
-    splits = splitters[0].split(sent)
-    for split in splits:
-      if len(split.split()) <= 250:
-        yield split
-      else:
-        yield 'warning: audio lizard phrase too long'
+# API supports max 5000 chars per request.
+def segments(sents, maxchars=5000):
+  i = 0
+  while True:
+    curseg = []
+    count = 0
+    while i < len(sents):
+      sent = sents[i]
+      if len(curseg) > 0 and count + 5 + len(sent) >= maxchars:
+        break
+      curseg.append(sent)
+      count += 5 + len(sent)
+      i += 1
+    if len(curseg) > 0:
+      yield '.  '.join(curseg)
+    else:
+      break
 
 def convert_text(title, text, outpath, enhanced=False):
   log.info('converting %s', title)
 
-  segs = [
-    seg
+  sents = [
+    sent
     for par in [title] + newlines.split(text.strip())
     if par and alpha.search(par)
     for sent in sent_detector.tokenize(par.strip())
     if alpha.search(sent)
-    for seg in segments(sent)
-    if alpha.search(seg)
   ]
 
-  if enhanced:
-    auth_key = subp.check_output('gcloud auth application-default print-access-token'.split()).strip()
+  segs = list(segments(sents))
+
+  auth_key = subp.check_output('gcloud auth application-default print-access-token'.split()).strip()
 
   tempdir = path.path(tempfile.mkdtemp('web-reader'))
   ":type: path.Path"
 
   log.info('spooling %s sentences to temp dir %s', len(segs), tempdir)
   for i, seg in enumerate(segs):
-    if enhanced:
-      headers = {
-        "Authorization": "Bearer " + auth_key,
-        "Content-Type": "application/json; charset=utf-8",
+    headers = {
+      "Authorization": "Bearer " + auth_key,
+      "Content-Type": "application/json; charset=utf-8",
+    }
+    data = {
+      'input':{
+        'text': seg
+      },
+      'voice':{
+        'languageCode': 'en-US',
+        'name':'en-US-Wavenet-F' if enhanced else 'en-US-Standard-C'
+      },
+      'audioConfig':{
+        'audioEncoding':'MP3'
       }
-      data = {
-        'input':{
-          'text': seg
-        },
-        'voice':{
-          'languageCode':'en-us'
-        },
-        'audioConfig':{
-          'audioEncoding':'MP3'
-        }
-      }
-      resp = post_with_retries('https://texttospeech.googleapis.com/v1beta1/text:synthesize',
-                              data=json.dumps(data), headers=headers, debug_desc=seg)
-      resp.raise_for_status()
-      data = base64.b64decode(resp.json()['audioContent'])
-      (tempdir / ('%s.mp3' % i)).write_bytes(data)
-    else:
-      params = dict(
-        format='mp3',
-        action='convert',
-        # This is from iSpeech's Select and Speak Chrome Extension.
-        apikey='e3a4477c01b482ea5acc6ed03b1f419f',
-        speed='0',
-        voice='usenglishfemale',
-        text=seg
-      )
-      resp = get_with_retries('http://api.ispeech.org/api/rest', params=params, debug_desc=seg)
-      (tempdir / ('%s.mp3' % i)).write_bytes(resp.content)
+    }
+    resp = post_with_retries('https://texttospeech.googleapis.com/v1/text:synthesize',
+                            data=json.dumps(data), headers=headers, debug_desc=seg)
+    resp.raise_for_status()
+    data = base64.b64decode(resp.json()['audioContent'])
+    (tempdir / ('%s.mp3' % i)).write_bytes(data)
 
   combined = reduce(
-    lambda x,y: x + pydub.AudioSegment.silent(500) + y,
+    lambda x,y: x + y,
     (pydub.AudioSegment.from_mp3(tempdir / ('%s.mp3' % i)) for i in xrange(len(segs)))
   )
-  combined = combined + pydub.AudioSegment.silent(2000)
+  combined = combined + pydub.AudioSegment.silent(1000)
   ":type: pydub.AudioSegment"
   # -b:a gives us CBR encoding (see https://trac.ffmpeg.org/wiki/Encode/MP3).
   # We need this because Android's built-in media seeker doesn't correctly seek in VBR
