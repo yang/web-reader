@@ -203,7 +203,9 @@ def segments(sents, maxchars=5000):
       count += 5 + len(sent)
       i += 1
     if len(curseg) > 0:
-      yield '.  '.join(curseg)
+      # Sentences better be split with ". " or ".\n" - if you split with two spaces ".  "
+      # then the API doesn't pause for very long in between sentences, for some reason!
+      yield '.\n'.join(curseg)
     else:
       break
 
