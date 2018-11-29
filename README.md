@@ -85,7 +85,7 @@ Run the web server with just `web-reader`.
 
 Run the converter daemon with `web-reader converter`.
 
-To enable Wavenet, run with the appropriate environment, e.g.:
+To set up Google TTS API auth, run with the appropriate environment, e.g.:
 
     GOOGLE_APPLICATION_CREDENTIALS=... web-reader converter
 
