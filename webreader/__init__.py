@@ -239,7 +239,7 @@ def convert_text(title, text, outpath, enhanced=False):
       },
       'voice':{
         'languageCode': 'en-US',
-        'name':'en-US-Wavenet-F' if enhanced else 'en-US-Standard-C'
+        'name':'en-US-Wavenet-F' if enhanced else 'en-US-Standard-D'
       },
       'audioConfig':{
         'audioEncoding':'MP3'
