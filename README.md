@@ -22,6 +22,7 @@ Install prerequisites on Ubuntu:
       build-essential \
       python-dev \
       postfix
+    sudo snap install google-cloud-sdk  --classic
 
 Recommended: set up postfix to send via gmail:
 
@@ -37,7 +38,8 @@ Install prerequisites on OS X:
 
     sudo port install postgresql95-server postgresql95
 
-Also install Java, making sure you [fix Java >6] so `import boilerpipe` works.
+Also install Java, making sure you [fix Java >6] so `import boilerpipe` works (I did not have to do this on more 
+recent systems, so the fixing step may be unnec).
 
 [fix Java >6]: https://stackoverflow.com/questions/19563766/eclipse-kepler-for-os-x-mavericks-request-java-se-6/19594116#19594116
 
@@ -81,7 +83,7 @@ You can also select a local plain-text file:
 
 One-time: run `web-reader init` to set up the DB and MP3 dir.
 
-Run the web server with just `web-reader`.
+Run the web server with just `web-reader webserver`.
 
 Run the converter daemon with `web-reader converter`.
 
