@@ -125,11 +125,11 @@ def feed():
   limit = min(int(request.args.get('limit', 30)), 30)
   fg = FeedGenerator()
   fg.load_extension('podcast')
-  fg.id('http://yz.mit.edu/audiolizard/feed')
+  fg.id('http://neio.ddns.net/audiolizard/feed')
   fg.title('AudioLizard podcast feed')
   fg.description('blah')
-  fg.link(href='http://yz.mit.edu/audiolizard', rel='alternate')
-  fg.link(href='http://yz.mit.edu/audiolizard/feed', rel='self')
+  fg.link(href='http://neio.ddns.net/audiolizard', rel='alternate')
+  fg.link(href='http://neio.ddns.net/audiolizard/feed', rel='self')
   fg.language('en')
   with db_session.begin():
     articles = db_session.query(Article)\
@@ -138,11 +138,11 @@ def feed():
       .limit(limit)
     for article in articles:
       fe = fg.add_entry()
-      fe.id('http://yz.mit.edu/audiolizard/mp3/%s' % article.id)
+      fe.id('http://neio.ddns.net/audiolizard/mp3/%s' % article.id)
       fe.title(ftfy.fix_text(article.title or article.body[:100]))
       fe.description(ftfy.fix_text(article.body))
       fe.link(href=article.url)
-      fe.enclosure('http://yz.mit.edu/audiolizard/mp3/%s' % article.id, 0, 'audio/mpeg')
+      fe.enclosure('http://neio.ddns.net/audiolizard/mp3/%s' % article.id, 0, 'audio/mpeg')
     return flask.Response(fg.rss_str(pretty=True), mimetype='application/rss+xml')
 
 @app.route('/mp3/<int:article_id>')
