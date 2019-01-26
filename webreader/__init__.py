@@ -35,7 +35,7 @@ from sqlalchemy.engine import create_engine
 from sqlalchemy.ext.declarative.api import declarative_base
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
-from flask.ext.cors import cross_origin
+from flask_cors import cross_origin
 import time
 import io
 
