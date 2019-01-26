@@ -120,8 +120,7 @@ def enqueue():
 
 @app.route('/feed')
 def feed():
-  if app.config.get('secret') is not None and app.config.get('secret') != request.args.get('key'):
-    raise Exception('secret does not match!')
+  check_secret()
   limit = min(int(request.args.get('limit', 30)), 30)
   fg = FeedGenerator()
   fg.load_extension('podcast')
@@ -138,15 +137,22 @@ def feed():
       .limit(limit)
     for article in articles:
       fe = fg.add_entry()
-      fe.id('http://neio.ddns.net/audiolizard/mp3/%s' % article.id)
+      mp3_url = 'http://neio.ddns.net/audiolizard/mp3/%s?secret=%s' % (article.id, app.config.get('secret'))
+      fe.id(mp3_url)
       fe.title(ftfy.fix_text(article.title or article.body[:100]))
       fe.description(ftfy.fix_text(article.body))
       fe.link(href=article.url)
-      fe.enclosure('http://neio.ddns.net/audiolizard/mp3/%s' % article.id, 0, 'audio/mpeg')
+      fe.enclosure(mp3_url, 0, 'audio/mpeg')
     return flask.Response(fg.rss_str(pretty=True), mimetype='application/rss+xml')
+
+
+def check_secret():
+  if app.config.get('secret') is not None and app.config.get('secret') != request.args.get('key'):
+    raise Exception('secret does not match!')
 
 @app.route('/mp3/<int:article_id>')
 def mp3(article_id):
+  check_secret()
   with db_session.begin():
     article = db_session.query(Article).get(article_id)
     slug = slugify(article.title or article.body, max_length=256,
@@ -170,6 +176,7 @@ def enhance_get(article_id):
 
 @app.route('/mp3/<int:article_id>/enhance', methods=['POST'])
 def enhance_post(article_id):
+  check_secret()
   with db_session.begin():
     article = db_session.query(Article).get(article_id)
     queue.put(dict(article_id=article.id, enhanced=True))
