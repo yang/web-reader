@@ -166,7 +166,8 @@ def handle_invalid_usage(error):
   return response
 
 def check_secret(key = None):
-  if app.config.get('secret') is not None and app.config.get('secret') != (key or request.args.get('key')):
+  if app.config.get('secret') is not None and app.config.get('secret') != (key or request.args.get('key') or
+                                                                           request.args.get('secret')):
     raise UnauthException('secret does not match!')
 
 @app.route('/mp3/<int:article_id>')
