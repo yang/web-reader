@@ -104,8 +104,7 @@ def extract(html):
 @cross_origin()
 def enqueue():
   data = request.args if request.method == 'GET' else request.get_json()
-  if app.config.get('secret') is not None and app.config.get('secret') != data.get('secret'):
-    raise Exception('secret does not match!')
+  check_secret(data.get('key'))
   with db_session.begin():
     import pprint; pprint.pprint(data)
     url = data.get('url')
@@ -145,10 +144,30 @@ def feed():
       fe.enclosure(mp3_url, 0, 'audio/mpeg')
     return flask.Response(fg.rss_str(pretty=True), mimetype='application/rss+xml')
 
+class UnauthException(Exception):
+  status_code = 401
 
-def check_secret():
-  if app.config.get('secret') is not None and app.config.get('secret') != request.args.get('key'):
-    raise Exception('secret does not match!')
+  def __init__(self, message, status_code=None, payload=None):
+    Exception.__init__(self)
+    self.message = message
+    if status_code is not None:
+      self.status_code = status_code
+    self.payload = payload
+
+  def to_dict(self):
+    rv = dict(self.payload or ())
+    rv['message'] = self.message
+    return rv
+
+@app.errorhandler(UnauthException)
+def handle_invalid_usage(error):
+  response = flask.jsonify(error.to_dict())
+  response.status_code = error.status_code
+  return response
+
+def check_secret(key = None):
+  if app.config.get('secret') is not None and app.config.get('secret') != (key or request.args.get('key')):
+    raise UnauthException('secret does not match!')
 
 @app.route('/mp3/<int:article_id>')
 def mp3(article_id):
