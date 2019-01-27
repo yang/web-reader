@@ -136,7 +136,7 @@ def feed():
       .limit(limit)
     for article in articles:
       fe = fg.add_entry()
-      mp3_url = 'http://neio.ddns.net/audiolizard/mp3/%s?secret=%s' % (article.id, app.config.get('secret'))
+      mp3_url = 'http://neio.ddns.net/audiolizard/mp3/%s?key=%s' % (article.id, app.config.get('secret'))
       fe.id(mp3_url)
       fe.title(ftfy.fix_text(article.title or article.body[:100]))
       fe.description(ftfy.fix_text(article.body))
