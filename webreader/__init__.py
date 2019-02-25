@@ -206,7 +206,7 @@ def enhance_post(article_id):
 def convert(url, outpath, enhanced=False):
   resp = get_with_retries(url, verify=False, headers={'user-agent': UA})
 
-  raw_title, raw_text = extract(resp.content)
+  raw_title, raw_text = extract(resp.text)
   text = ftfy.fix_text(raw_text)
   title = ftfy.fix_text(raw_title) if len(raw_title.strip()) > 0 else ''
 
