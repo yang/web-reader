@@ -106,7 +106,6 @@ def enqueue():
   data = request.args if request.method == 'GET' else request.get_json()
   check_secret(data.get('key'))
   with db_session.begin():
-    import pprint; pprint.pprint(data)
     url = data.get('url')
     body = data.get('body') or None
     if (url or '').strip() == '' and (body or '').strip() == '':
