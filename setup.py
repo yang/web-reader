@@ -23,7 +23,7 @@ setup(
     'flask-cors==3.0.7',
     'ftfy==3.4.0',
     'goose-extractor==1.0.25',
-    'nltk==3.0.1',
+    'nltk==3.4.5',
     'path.py==7.2',
     'pq==1.2',
     'psycopg2==2.7.5',
