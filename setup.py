@@ -18,7 +18,7 @@ setup(
     # This hack based on
     # <https://stackoverflow.com/questions/17366784/setuptools-unable-to-use-link-from-dependency-links/17442663#17442663>.
     'boilerpipe<=1.3.0.0',
-    'feedgen==0.3.1',
+    'feedgen==0.9.0',
     'flask==1.0.2',
     'flask-cors==3.0.7',
     'ftfy==3.4.0',
