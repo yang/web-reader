@@ -10,6 +10,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 
 import subprocess as subp
 from datetime import datetime
+import pytz
 from email.mime.text import MIMEText
 import logging
 import re
@@ -140,6 +141,7 @@ def feed():
       fe.title(ftfy.fix_text(article.title or article.body[:100]))
       fe.description(ftfy.fix_text(article.body))
       fe.link(href=article.url)
+      fe.pubDate(article.created.replace(tzinfo=pytz.UTC))
       fe.enclosure(mp3_url, 0, 'audio/mpeg')
     return flask.Response(fg.rss_str(pretty=True), mimetype='application/rss+xml')
 
