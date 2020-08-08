@@ -59,8 +59,13 @@ Create the necessary postgresql user and DB (and store the password in your [pgp
     sudo -u postgres createdb -O webreader webreader
     touch ~/.pgpass
     chmod 600 ~/.pgpass
+
     cat >> ~/.pgpass
     localhost:5432:webreader:webreader:PASSWORD
+    ^D
+
+    psql -h localhost -U webreader webreader
+    create table articles (id serial primary key, url text, created timestamp not null, title text, body text, converted timestamp);
     ^D
 
 ## Usage
