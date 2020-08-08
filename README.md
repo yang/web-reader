@@ -36,10 +36,28 @@ Also install Java, needed for boilerpipe:
 
 Install prerequisites on OS X:
 
-    sudo port install postgresql95-server postgresql95
+    sudo port install postgresql95-server postgresql95 openjdk10
+
+Also install Java.
+
+### Ubuntu
+
+Install prerequisites on Ubuntu:
+
+    sudo apt install postgresql
 
 Also install Java, making sure you [fix Java >6] so `import boilerpipe` works (I did not have to do this on more 
 recent systems, so the fixing step may be unnec).
+
+[fix Java >6]: https://stackoverflow.com/questions/19563766/eclipse-kepler-for-os-x-mavericks-request-java-se-6/19594116#19594116
+
+### OS X
+
+Install prerequisites on OS X:
+
+    sudo port install postgresql95-server postgresql95 openjdk-10-jdk
+
+Make sure you [fix Java >6] if nec. so `import boilerpipe` works.
 
 [fix Java >6]: https://stackoverflow.com/questions/19563766/eclipse-kepler-for-os-x-mavericks-request-java-se-6/19594116#19594116
 
