@@ -123,11 +123,12 @@ def feed():
   limit = min(int(request.args.get('limit', 30)), 30)
   fg = FeedGenerator()
   fg.load_extension('podcast')
-  fg.id('http://neio.ddns.net/audiolizard/feed')
+  base_url = app.config['base_url']
+  fg.id('%s/feed' % base_url)
   fg.title('AudioLizard podcast feed')
   fg.description('blah')
-  fg.link(href='http://neio.ddns.net/audiolizard', rel='alternate')
-  fg.link(href='http://neio.ddns.net/audiolizard/feed', rel='self')
+  fg.link(href=('%s' % base_url), rel='alternate')
+  fg.link(href=('%s/feed?key=%s' % (base_url, app.config.get('secret'))), rel='self')
   fg.language('en')
   with db_session.begin():
     articles = db_session.query(Article)\
@@ -136,7 +137,7 @@ def feed():
       .limit(limit)
     for article in articles:
       fe = fg.add_entry()
-      mp3_url = 'http://neio.ddns.net/audiolizard/mp3/%s?key=%s' % (article.id, app.config.get('secret'))
+      mp3_url = '%s/mp3/%s?key=%s' % (base_url, article.id, app.config.get('secret'))
       fe.id(mp3_url)
       fe.title(ftfy.fix_text(article.title or article.body[:100]))
       fe.description(ftfy.fix_text(article.body))
@@ -401,6 +402,8 @@ def main(argv=sys.argv):
                            help='Web server listen port')
   webserver_p.add_argument('-s', '--secret',
                            help='Optional parameter `secret` to restrict enqueuing')
+  webserver_p.add_argument('--base-url',
+                           help='The base URL')
 
   converter_p.add_argument('-t', '--to',
                            help='Email to send notifications to (sent only if this is set)')
@@ -485,6 +488,7 @@ def main(argv=sys.argv):
   elif cmd == 'webserver':
     app.config['CORS_HEADERS'] = 'Content-Type'
     if cfg.secret: app.config['secret'] = cfg.secret
+    if cfg.base_url: app.config['base_url'] = cfg.base_url or 'https://example.com'
     app.run(port=cfg.port)
   elif cmd == 'convert':
     convert(cfg.url, cfg.outpath)
