@@ -31,7 +31,7 @@ setup(
     # The 'security' extra is to deal with SSL errors.  See
     # <http://stackoverflow.com/a/30438722/43118>.
     'requests[security]==2.20.0',
-    'sqlalchemy==0.9.8',
+    'sqlalchemy==1.4.2',
     'python-slugify==1.1.4',
   ],
   dependency_links=[
