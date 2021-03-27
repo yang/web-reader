@@ -86,6 +86,14 @@ Create the necessary postgresql user and DB (and store the password in your [pgp
     create table articles (id serial primary key, url text, created timestamp not null, title text, body text, converted timestamp);
     ^D
 
+### Google Cloud Setup
+
+Follow https://cloud.google.com/text-to-speech/docs/quickstart-client-libraries.
+
+Configure `GOOGLE_APPLICATION_CREDENTIALS` as described.
+
+Make sure the `gcloud` command works!
+
 ## Usage
 
 ### Converting Single Document
