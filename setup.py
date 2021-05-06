@@ -20,7 +20,7 @@ setup(
     'boilerpipe<=1.3.0.0',
     'feedgen==0.9.0',
     'flask==1.0.2',
-    'flask-cors==3.0.7',
+    'flask-cors==3.0.9',
     'ftfy==3.4.0',
     'goose-extractor==1.0.25',
     'nltk==3.4.5',
