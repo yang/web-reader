@@ -1,12 +1,6 @@
 # AudioLizard
 
-A quick-and-dirty SoundGecko replacement!
-
-This is a REST API server that speech-synthesizes articles (stripping boilerplate, doing sentence segmentation, etc.) into a podcast feed of MP3s which you can consume with your favorite podcasting app.  You can feed in articles via bookmarklet or [Android app].
-
-SoundGecko's TTS voices were my favorite, so this reuses the same engine.
-
-Tested on Ubuntu 12.04 and OS X 10.10 Yosemite.
+This is a REST API server that speech-synthesizes articles (stripping boilerplate, doing sentence segmentation, etc.) into a podcast feed of MP3s which you can consume with your favorite podcasting app.  You can feed in articles via bookmarklet or [PWA].
 
 ## Installation
 
@@ -200,4 +194,4 @@ More resources:
 [feedgen]: https://github.com/lkiesow/python-feedgen
 [pgdg]: https://wiki.postgresql.org/wiki/Apt
 [pgpass file]: http://www.postgresql.org/docs/9.3/static/libpq-pgpass.html
-[Android app]: https://github.com/yang/audiolizard-android-app
+[PWA]: https://github.com/yang/audiolizard-pwa
