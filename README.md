@@ -1,6 +1,10 @@
+<!-- @format -->
+
 # AudioLizard
 
-This is a REST API server that speech-synthesizes articles (stripping boilerplate, doing sentence segmentation, etc.) into a podcast feed of MP3s which you can consume with your favorite podcasting app.  You can feed in articles via bookmarklet or [PWA].
+This is a REST API server that speech-synthesizes articles (stripping boilerplate, doing sentence segmentation, etc.) into a podcast feed of MP3s which you can consume with your favorite podcasting app. You can feed in articles via bookmarklet or [PWA].
+
+The PWA is available at <https://github.com/yang/audiolizard-pwa>.
 
 ## Installation
 
@@ -15,16 +19,13 @@ Install prerequisites on Ubuntu:
       postgresql-server-dev-10 \
       build-essential \
       python-dev \
-      postfix
+      postfix \
+      openjdk-11-jdk # Needed for boilerpipe
     sudo snap install google-cloud-sdk  --classic
 
 Recommended: set up postfix to send via gmail:
 
     https://www.howtoforge.com/tutorial/configure-postfix-to-use-gmail-as-a-mail-relay/
-
-Also install Java, needed for boilerpipe:
-
-    sudo apt install openjdk-11-jdk
 
 ### OS X
 
@@ -32,30 +33,7 @@ Install prerequisites on OS X:
 
     sudo port install postgresql95-server postgresql95 openjdk10
 
-Also install Java.
-
-### Ubuntu
-
-Install prerequisites on Ubuntu:
-
-    sudo apt install postgresql
-
-Also install Java, making sure you [fix Java >6] so `import boilerpipe` works (I did not have to do this on more 
-recent systems, so the fixing step may be unnec).
-
-[fix Java >6]: https://stackoverflow.com/questions/19563766/eclipse-kepler-for-os-x-mavericks-request-java-se-6/19594116#19594116
-
-### OS X
-
-Install prerequisites on OS X:
-
-    sudo port install postgresql95-server postgresql95 openjdk-10-jdk
-
-Make sure you [fix Java >6] if nec. so `import boilerpipe` works.
-
-[fix Java >6]: https://stackoverflow.com/questions/19563766/eclipse-kepler-for-os-x-mavericks-request-java-se-6/19594116#19594116
-
-### General
+### All platforms
 
 In this source dir, install the application (e.g. into a virtualenv):
 
@@ -118,7 +96,7 @@ To set up Google TTS API auth, run with the appropriate environment, e.g.:
 
 Try submitting a web page with <http://localhost:5000/api/v1/enqueue?url=SOMEURL>.
 
-For normal on-going use, you can use a handy bookmarklet for one-click submission of your current page.  It tries to extract the main body content by default, but you can also just have some text on the page already selected when you press the bookmarklet to process just that selection:
+For normal on-going use, you can use a handy bookmarklet for one-click submission of your current page. It tries to extract the main body content by default, but you can also just have some text on the page already selected when you press the bookmarklet to process just that selection:
 
     javascript:var r=new XMLHttpRequest();try{r.open('POST','http://localhost:5000/api/v1/enqueue',false);r.setRequestHeader("Content-Type", "application/json;charset=UTF-8");r.send(JSON.stringify({url:document.location.href,body:window.getSelection?window.getSelection().toString():document.selection.createRange().text}));alert('done');}catch(e){alert('failed');}
 
@@ -139,17 +117,17 @@ To make your web server accessible outside your firewall, [localtunnel] is a qui
 ### Resubmitting Old Failed Articles
 
 You can use the `reconvert` sub-command to force certain article IDs to get
-re-processed.  This will just produce new MP3s in place.  No new feed entries
-are created.  Text won't be re-extracted - only the audio synthesis is rerun.
+re-processed. This will just produce new MP3s in place. No new feed entries
+are created. Text won't be re-extracted - only the audio synthesis is rerun.
 
 You can also use the `resubmit` sub-command to retry submitting old articles that
-failed.  This will create new feed entries (and won't affect old entries).
+failed. This will create new feed entries (and won't affect old entries).
 For instance,
 
     web-reader resubmit http://localhost:5000 -d 2015-11-01 -o oldest -n 20
 
 will resubmit to the AudioLizard web server running on port 5000 all the URLs
-that were *ever only* failures (i.e., ignore failures that got converted
+that were _ever only_ failures (i.e., ignore failures that got converted
 successfully another time), limited to a batch of 20 (starting with the oldest
 first).
 
@@ -169,6 +147,8 @@ is usually the correct behavior.
 
 ## TTS Research
 
+(Note: This is very outdated now!)
+
 The best open source TTS implementation I'm aware of:
 
 https://github.com/r9y9/wavenet_vocoder
@@ -184,14 +164,14 @@ More resources:
 - https://www.reddit.com/r/MachineLearning/comments/8utx7o/d_best_open_source_text_to_speech_networks/
 - https://www.reddit.com/r/MachineLearning/comments/845uji/d_are_the_hyperrealistic_results_of_tacotron2_and/
 
-[PQ]: https://github.com/malthe/pq/
+[pq]: https://github.com/malthe/pq/
 [goose]: https://github.com/GravityLabs/goose
 [boilerpipe]: https://code.google.com/p/boilerpipe/
 [ftfy]: https://github.com/LuminosoInsight/python-ftfy
 [nltk]: http://www.nltk.org/
-[iSpeech]: http://www.ispeech.org/
+[ispeech]: http://www.ispeech.org/
 [pydub]: http://pydub.com/
 [feedgen]: https://github.com/lkiesow/python-feedgen
 [pgdg]: https://wiki.postgresql.org/wiki/Apt
 [pgpass file]: http://www.postgresql.org/docs/9.3/static/libpq-pgpass.html
-[PWA]: https://github.com/yang/audiolizard-pwa
+[pwa]: https://github.com/yang/audiolizard-pwa
