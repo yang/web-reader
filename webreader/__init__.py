@@ -120,7 +120,7 @@ def enqueue():
 @app.route('/feed')
 def feed():
   check_secret()
-  limit = min(int(request.args.get('limit', 30)), 30)
+  limit = min(int(request.args.get('limit', 99)), 99)
   fg = FeedGenerator()
   fg.load_extension('podcast')
   base_url = app.config['base_url']
