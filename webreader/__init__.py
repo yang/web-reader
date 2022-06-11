@@ -466,7 +466,8 @@ def main(argv=sys.argv):
               convert_text(None, article.body, outpath, enhanced)
             else:
               article.title, article.body = convert(article.url, outpath, enhanced)
-          except Exception as ex:
+          # Include OSError to report things like OOMs when forking a process.
+          except (OSError, Exception) as ex:
             log.exception('error processing article')
             subj = 'AudioLizard | Error processing article'
             msg = '\n\n'.join([article.url, traceback.format_exc(), article.body or ''])
