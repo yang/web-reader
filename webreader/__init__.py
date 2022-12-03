@@ -8,6 +8,7 @@ import json
 
 from argparse import ArgumentParser, ArgumentTypeError
 
+from multiprocessing import Process, Queue
 import subprocess as subp
 from datetime import datetime
 import pytz
@@ -61,9 +62,6 @@ app = flask.Flask(__name__)
 
 log = logging.getLogger(__name__)
 
-sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
-goose = Goose()
-
 alpha = re.compile(r'[a-z]', re.IGNORECASE)
 newlines = re.compile(r'\n+')
 
@@ -90,6 +88,7 @@ def swallow(f):
 def extract(html):
   extractor = Extractor(extractor='ArticleExtractor', html=html)
   bp_text = extractor.getText()
+  goose = Goose()
 
   try:
     extracted = goose.extract(raw_html=html)
@@ -241,6 +240,7 @@ def segments(sents, maxchars=5000):
 
 def convert_text(title, text, outpath, enhanced=False):
   log.info('converting %s', title)
+  sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
 
   sents = [
     sent
@@ -462,10 +462,13 @@ def main(argv=sys.argv):
           enhanced = bool(task.data.get('enhanced'))
           outpath = enhanced_mp3_path(article) if enhanced else mp3path(article)
           try:
-            if article.body is not None:
-              convert_text(None, article.body, outpath, enhanced)
-            else:
-              article.title, article.body = convert(article.url, outpath, enhanced)
+            subprocess_queue = Queue()
+            p = Process(target=worker, args=(subprocess_queue, article, enhanced, outpath))
+            p.start()
+            p.join()
+            result = subprocess_queue.get()
+            if article.body is None:
+              article.title, article.body = result
           # Include OSError to report things like OOMs when forking a process.
           except (OSError, Exception) as ex:
             log.exception('error processing article')
@@ -512,3 +515,10 @@ def main(argv=sys.argv):
     )
   else:
     raise Exception()
+
+
+def worker(q, article, enhanced, outpath):
+  if article.body is not None:
+    q.put(convert_text(None, article.body, outpath, enhanced))
+  else:
+    q.put(convert(article.url, outpath, enhanced))
