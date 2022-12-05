@@ -87,7 +87,8 @@ def extract(html):
   import trafilatura
   extracted = trafilatura.extract(html, include_comments=False)
   doc = trafilatura.extract_metadata(html)
-  return doc.title, extracted
+  # doc can be None if we're looking at non-HTML plain text file
+  return doc.title if doc else None, extracted
 
 @app.route('/api/v1/enqueue', methods=['GET','POST'])
 @cross_origin()
