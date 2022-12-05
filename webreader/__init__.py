@@ -8,6 +8,7 @@ import json
 
 from argparse import ArgumentParser, ArgumentTypeError
 
+import itertools
 from multiprocessing import Process, Queue
 import subprocess as subp
 from datetime import datetime
@@ -26,10 +27,7 @@ from pq import PQ
 import requests
 import flask
 from flask import request
-from boilerpipe.extract import Extractor
-import pydub
 import path
-from goose import Goose
 import ftfy
 from slugify.slugify import slugify
 import sqlalchemy as sa
@@ -86,9 +84,15 @@ def swallow(f):
   except: return None
 
 def extract(html):
+  from boilerpipe.extract import Extractor
+  from goose import Goose
+  log.info('creating extractor')
   extractor = Extractor(extractor='ArticleExtractor', html=html)
+  log.info('extractor.gettext')
   bp_text = extractor.getText()
+  log.info('creating goose')
   goose = Goose()
+  log.info('extracting via goose')
 
   try:
     extracted = goose.extract(raw_html=html)
@@ -207,7 +211,9 @@ def enhance_post(article_id):
 def convert(url, outpath, enhanced=False):
   resp = get_with_retries(url, verify=False, headers={'user-agent': UA})
 
+  log.info('gotten, extracting')
   raw_title, raw_text = extract(resp.text)
+  log.info('ftfy')
   text = ftfy.fix_text(raw_text)
   title = ftfy.fix_text(raw_title) if len(raw_title.strip()) > 0 else ''
 
@@ -242,9 +248,10 @@ def convert_text(title, text, outpath, enhanced=False):
   log.info('converting %s', title)
   sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
 
+  paragraphs = newlines.split(text.strip())
   sents = [
     sent
-    for par in [title] + newlines.split(text.strip())
+    for par in [title] + paragraphs
     if par and alpha.search(par)
     for sent in sent_detector.tokenize(par.strip())
     if alpha.search(sent)
@@ -257,7 +264,7 @@ def convert_text(title, text, outpath, enhanced=False):
   tempdir = path.path(tempfile.mkdtemp('web-reader'))
   ":type: path.Path"
 
-  log.info('spooling %s sentences to temp dir %s', len(segs), tempdir)
+  log.info('spooling %s segments (%s paragraphs, %s sentences) to temp dir %s', len(segs), len(paragraphs), len(sents), tempdir)
   for i, seg in enumerate(segs):
     headers = {
       "Authorization": "Bearer " + auth_key,
@@ -281,16 +288,26 @@ def convert_text(title, text, outpath, enhanced=False):
     data = base64.b64decode(resp.json()['audioContent'])
     (tempdir / ('%s.mp3' % i)).write_bytes(data)
 
-  combined = reduce(
-    lambda x,y: x + y,
-    (pydub.AudioSegment.from_mp3(tempdir / ('%s.mp3' % i)) for i in xrange(len(segs)))
-  )
-  combined = combined + pydub.AudioSegment.silent(1000)
-  ":type: pydub.AudioSegment"
-  # -b:a gives us CBR encoding (see https://trac.ffmpeg.org/wiki/Encode/MP3).
-  # We need this because Android's built-in media seeker doesn't correctly seek in VBR
-  # (see https://code.google.com/p/android/issues/detail?id=8154).
-  combined.export(outpath, format='mp3', parameters=['-b:a','48000'])
+  # From https://stackoverflow.com/questions/5276253/create-a-silent-mp3-from-the-command-line
+  # Must use 24kHz to match the mp3s from Google (without needing transcoding)
+  subp.check_call('''
+  ffmpeg -hide_banner -loglevel error -f lavfi -i anullsrc=r=24000:cl=mono -t 0.5 -q:a 9 -acodec libmp3lame %s
+  ''' % (tempdir / 'join-silence.mp3'), shell=True)
+  subp.check_call('''
+  ffmpeg -hide_banner -loglevel error -f lavfi -i anullsrc=r=24000:cl=mono -t 1 -q:a 9 -acodec libmp3lame %s
+  ''' % (tempdir / 'end-silence.mp3'), shell=True)
+
+  # From https://superuser.com/questions/314239/how-to-join-merge-many-mp3-files
+  # join_spec should look like:
+  # /tmp/tmplVPQHgweb-reader/0.mp3|/tmp/tmplVPQHgweb-reader/join-silence.mp3|/tmp/tmplVPQHgweb-reader/1.mp3|/tmp/tmplVPQHgweb-reader/end-silence.mp3
+  join_spec = '|'.join(list(itertools.chain(
+    *zip(
+      [tempdir / ('%s.mp3' % i) for i in xrange(len(segs))],
+      [tempdir / 'join-silence.mp3' for i in xrange(len(segs))]
+    )
+  ))[:-1] + [tempdir / 'end-silence.mp3'])
+
+  subp.check_call('''ffmpeg -hide_banner -loglevel error -i 'concat:%s' -acodec copy %s''' % (join_spec, outpath), shell=True)
 
   log.info('done converting %s', title)
   return title, text
@@ -462,10 +479,17 @@ def main(argv=sys.argv):
           enhanced = bool(task.data.get('enhanced'))
           outpath = enhanced_mp3_path(article) if enhanced else mp3path(article)
           try:
+            log.info('creating queue')
             subprocess_queue = Queue()
-            p = Process(target=worker, args=(subprocess_queue, article, enhanced, outpath))
-            p.start()
-            p.join()
+            log.info('creating process')
+            process = Process(target=worker, args=(subprocess_queue, article, enhanced, outpath))
+            log.info('starting process')
+            process.start()
+            log.info('joining process')
+            process.join()
+            log.info('getting from queue')
+            if process.exitcode != 0:
+              raise Exception('got exit code ' + str(process.exitcode))
             result = subprocess_queue.get()
             if article.body is None:
               article.title, article.body = result
