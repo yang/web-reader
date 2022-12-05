@@ -32,7 +32,7 @@ import ftfy
 from slugify.slugify import slugify
 import sqlalchemy as sa
 from sqlalchemy.engine import create_engine
-from sqlalchemy.ext.declarative.api import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
 from flask_cors import cross_origin
@@ -84,25 +84,10 @@ def swallow(f):
   except: return None
 
 def extract(html):
-  from boilerpipe.extract import Extractor
-  from goose import Goose
-  log.info('creating extractor')
-  extractor = Extractor(extractor='ArticleExtractor', html=html)
-  log.info('extractor.gettext')
-  bp_text = extractor.getText()
-  log.info('creating goose')
-  goose = Goose()
-  log.info('extracting via goose')
-
-  try:
-    extracted = goose.extract(raw_html=html)
-  except IndexError:
-    # Tolerate https://github.com/grangier/python-goose/issues/194
-    return '', bp_text
-  else:
-    gs_text = extracted.cleaned_text
-    title = extracted.title
-    return title, bp_text if len(bp_text) > len(gs_text) else gs_text
+  import trafilatura
+  extracted = trafilatura.extract(html, include_comments=False)
+  doc = trafilatura.extract_metadata(html)
+  return doc.title, extracted
 
 @app.route('/api/v1/enqueue', methods=['GET','POST'])
 @cross_origin()
@@ -187,7 +172,7 @@ def mp3(article_id):
     best_path = enhanced_mp3_path(article)
     if not best_path.exists():
       best_path = mp3path(article)
-    with open(best_path) as f:
+    with open(best_path, 'rb') as f:
       return flask.Response(f.read(), mimetype='audio/mpeg',
           headers={"Content-Disposition": "attachment; filename=%s" % filename})
 
@@ -245,9 +230,11 @@ def segments(sents, maxchars=5000):
       break
 
 def convert_text(title, text, outpath, enhanced=False):
+  print('HEEY')
   log.info('converting %s', title)
   sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
 
+  log.info('sentence segmentation')
   paragraphs = newlines.split(text.strip())
   sents = [
     sent
@@ -257,9 +244,10 @@ def convert_text(title, text, outpath, enhanced=False):
     if alpha.search(sent)
   ]
 
+  log.info('grouping into chunks')
   segs = list(segments(sents))
 
-  auth_key = subp.check_output('gcloud auth application-default print-access-token'.split()).strip()
+  auth_key = subp.check_output('gcloud auth application-default print-access-token'.split()).strip().decode('utf8')
 
   tempdir = path.path(tempfile.mkdtemp('web-reader'))
   ":type: path.Path"
@@ -302,8 +290,8 @@ def convert_text(title, text, outpath, enhanced=False):
   # /tmp/tmplVPQHgweb-reader/0.mp3|/tmp/tmplVPQHgweb-reader/join-silence.mp3|/tmp/tmplVPQHgweb-reader/1.mp3|/tmp/tmplVPQHgweb-reader/end-silence.mp3
   join_spec = '|'.join(list(itertools.chain(
     *zip(
-      [tempdir / ('%s.mp3' % i) for i in xrange(len(segs))],
-      [tempdir / 'join-silence.mp3' for i in xrange(len(segs))]
+      [tempdir / ('%s.mp3' % i) for i in range(len(segs))],
+      [tempdir / 'join-silence.mp3' for i in range(len(segs))]
     )
   ))[:-1] + [tempdir / 'end-silence.mp3'])
 
@@ -320,15 +308,14 @@ def req_with_retries(method, url, debug_desc, **kw):
   a, b, c = None, None, None # just to silence pycharm code check
   details = '%s with %s' % (url, kw)
   debug_desc = '%s (%s)' % (debug_desc, details) if debug_desc else details
-  for trial in xrange(5):
+  for trial in range(5):
     try:
       return getattr(requests, method)(url, timeout=30, **kw)
-    except:
+    except Exception as ex:
       log.warn('used trial #%s of 5 on %s', trial + 1, debug_desc)
-      a, b, c = sys.exc_info()
       if trial + 1 < 5: time.sleep(5)
   else:
-    raise a, b, c
+    raise ex
 
 def get_with_retries(url, debug_desc=None, **kw):
   return req_with_retries('get', url, debug_desc, **kw)
@@ -509,7 +496,9 @@ def main(argv=sys.argv):
             msg['Subject'] = subj
             msg['To'] = cfg.to
             msg['From'] = getattr(cfg, 'from')
-            print subj
+            print(
+              subj
+            )
             s = SMTP('localhost')
             s.sendmail(getattr(cfg, 'from'), [cfg.to], msg.as_string())
             s.quit()
