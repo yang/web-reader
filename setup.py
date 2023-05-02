@@ -18,7 +18,7 @@ setup(
     # This hack based on
     # <https://stackoverflow.com/questions/17366784/setuptools-unable-to-use-link-from-dependency-links/17442663#17442663>.
     'feedgen==0.9.0',
-    'flask==2.2.2',
+    'flask==2.3.2',
     'flask-cors==3.0.10',
     'ftfy==3.4.0',
     'nltk==3.7',
