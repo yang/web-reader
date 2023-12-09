@@ -5,6 +5,7 @@ SoundGecko clone - a web app to convert web pages to an MP3 podcast feed.
 """
 import base64
 import json
+import os
 
 from argparse import ArgumentParser, ArgumentTypeError
 
@@ -231,7 +232,6 @@ def segments(sents, maxchars=5000):
       break
 
 def convert_text(title, text, outpath, enhanced=False):
-  print('HEEY')
   log.info('converting %s', title)
   sent_detector = nltk.data.load('tokenizers/punkt/english.pickle')
 
@@ -475,7 +475,7 @@ def main(argv=sys.argv):
             process.start()
             log.info('joining process')
             process.join()
-            log.info('getting from queue')
+            log.info('joined process')
             if process.exitcode != 0:
               raise Exception('got exit code ' + str(process.exitcode))
             result = subprocess_queue.get()
