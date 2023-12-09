@@ -86,8 +86,11 @@ def swallow(f):
 
 def extract(html):
   import trafilatura
+  log.info('trafilatura.extract')
   extracted = trafilatura.extract(html, include_comments=False)
+  log.info('trafilatura.extract_metadata')
   doc = trafilatura.extract_metadata(html)
+  log.info('return extract')
   # doc can be None if we're looking at non-HTML plain text file
   return doc.title if doc else None, extracted
 
@@ -458,6 +461,7 @@ def main(argv=sys.argv):
   queue = pq['articles']
 
   if cmd == 'converter':
+    log.info('process pid %d', os.getpid())
     while True:
       with db_session.begin():
         task = queue.get()
@@ -473,12 +477,14 @@ def main(argv=sys.argv):
             process = Process(target=worker, args=(subprocess_queue, article, enhanced, outpath))
             log.info('starting process')
             process.start()
+            log.info('getting from queue')
+            result = subprocess_queue.get()
+            log.info('got from queue: %r', result)
             log.info('joining process')
             process.join()
             log.info('joined process')
             if process.exitcode != 0:
               raise Exception('got exit code ' + str(process.exitcode))
-            result = subprocess_queue.get()
             if article.body is None:
               article.title, article.body = result
           # Include OSError to report things like OOMs when forking a process.
@@ -532,7 +538,12 @@ def main(argv=sys.argv):
 
 
 def worker(q, article, enhanced, outpath):
+  log.info('worker pid %d', os.getpid())
+  def verbose_put(stuff):
+    log.info('putting %r', stuff)
+    q.put(stuff)
+    log.info('done putting, exiting pid %d', os.getpid())
   if article.body is not None:
-    q.put(convert_text(None, article.body, outpath, enhanced))
+    verbose_put(swallow(lambda: convert_text(None, article.body, outpath, enhanced)))
   else:
-    q.put(convert(article.url, outpath, enhanced))
+    verbose_put(swallow(lambda: convert(article.url, outpath, enhanced)))
