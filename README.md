@@ -138,38 +138,16 @@ is usually the correct behavior.
 
 1. Enqueue the web article URL into a [PQ] queue.
 2. Fetch the page.
-3. Extract the main body content (remove boilerplate) using both [goose] and [boilerpipe], whichever recalls more.
+3. Extract the main body content (remove boilerplate) using trafilatura.
 4. Clean up the text with [ftfy].
 5. Split up text into sentences (iSpeech API only takes small chunks of text) using [nltk] sentence segmentation.
-6. Submit each sentence to the [iSpeech] API to get back many MP3s.
+6. Submit each sentence to the Google Cloud TTS API to get back many MP3s.
 7. Combine the MP3s (with 500ms of silence in between sentences) using [pydub].
 8. Generate the podcast feed with [feedgen].
 
-## TTS Research
-
-(Note: This is very outdated now!)
-
-The best open source TTS implementation I'm aware of:
-
-https://github.com/r9y9/wavenet_vocoder
-
-Samples: https://r9y9.github.io/wavenet_vocoder/
-
-However, it's extremely slow to synthesize (~20 minutes per second of speech on Colaboratory!).
-An open source implementation of parallel-wavenet is not there yet.
-
-More resources:
-
-- https://github.com/keithito/tacotron
-- https://www.reddit.com/r/MachineLearning/comments/8utx7o/d_best_open_source_text_to_speech_networks/
-- https://www.reddit.com/r/MachineLearning/comments/845uji/d_are_the_hyperrealistic_results_of_tacotron2_and/
-
 [pq]: https://github.com/malthe/pq/
-[goose]: https://github.com/GravityLabs/goose
-[boilerpipe]: https://code.google.com/p/boilerpipe/
 [ftfy]: https://github.com/LuminosoInsight/python-ftfy
 [nltk]: http://www.nltk.org/
-[ispeech]: http://www.ispeech.org/
 [pydub]: http://pydub.com/
 [feedgen]: https://github.com/lkiesow/python-feedgen
 [pgdg]: https://wiki.postgresql.org/wiki/Apt
