@@ -28,7 +28,7 @@ from pq import PQ
 import requests
 import flask
 from flask import request
-import path
+import pathlib
 import ftfy
 from slugify.slugify import slugify
 import sqlalchemy as sa
@@ -67,7 +67,7 @@ newlines = re.compile(r'\n+')
 db_session = None
 queue = None
 
-mp3dir = path.path('~/.webreader/mp3s').expanduser()
+mp3dir = pathlib.Path('~/.webreader/mp3s').expanduser()
 
 Base = declarative_base()
 class Article(Base):
@@ -250,8 +250,7 @@ def convert_text(title, text, outpath, enhanced=False):
 
   auth_key = subp.check_output('gcloud auth application-default print-access-token'.split()).strip().decode('utf8')
 
-  tempdir = path.path(tempfile.mkdtemp('web-reader'))
-  ":type: path.Path"
+  tempdir = pathlib.Path(tempfile.mkdtemp('web-reader'))
 
   log.info('spooling %s segments (%s paragraphs, %s sentences) to temp dir %s', len(segs), len(paragraphs), len(sents), tempdir)
   for i, seg in enumerate(segs):
@@ -367,7 +366,7 @@ def resubmit(base_url, sort_order, pretend, limit=None, min_date=None):
   for created, url, body in failures:
     log.info('submitting URL %s body %r', url, trunc_txt(body or ''))
     if not pretend:
-      requests.get(path.path(base_url) / 'api/v1/enqueue', params=dict(url=url, body=body))
+      requests.get(pathlib.Path(base_url) / 'api/v1/enqueue', params=dict(url=url, body=body))
 
 def reconvert(min_id, max_id, sort_order, pretend):
   pg, ses = create_session()
@@ -451,7 +450,7 @@ def main(argv=sys.argv):
   pq, db_session = create_session()
 
   if cmd == 'init':
-    mp3dir.makedirs_p()
+    mp3dir.mkdir(parents=True, exist_ok=True)
     init_db(pq, db_session.bind)
     return
 
@@ -489,8 +488,8 @@ def main(argv=sys.argv):
           else:
             article.converted = datetime.now()
             subj = 'AudioLizard | %s' % article.title or article.url
-            mp3_url = path.path(cfg.base_url) / 'mp3' / str(article.id) if cfg.base_url else ''
-            enhance_url = path.path(cfg.base_url) / 'mp3' / str(article.id) / 'enhance' if cfg.base_url else ''
+            mp3_url = pathlib.Path(cfg.base_url) / 'mp3' / str(article.id) if cfg.base_url else ''
+            enhance_url = pathlib.Path(cfg.base_url) / 'mp3' / str(article.id) / 'enhance' if cfg.base_url else ''
             msg = '\n\n'.join(filter(None, [article.title or '', article.url, mp3_url, enhance_url, article.body or '']))
           if cfg.to:
             msg = MIMEText(msg, 'plain', 'utf-8')
