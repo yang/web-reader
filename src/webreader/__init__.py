@@ -290,10 +290,10 @@ def convert_text(title, text, outpath, enhanced=False):
   # /tmp/tmplVPQHgweb-reader/0.mp3|/tmp/tmplVPQHgweb-reader/join-silence.mp3|/tmp/tmplVPQHgweb-reader/1.mp3|/tmp/tmplVPQHgweb-reader/end-silence.mp3
   join_spec = '|'.join(list(itertools.chain(
     *zip(
-      [tempdir / ('%s.mp3' % i) for i in range(len(segs))],
-      [tempdir / 'join-silence.mp3' for i in range(len(segs))]
+      [str(tempdir / ('%s.mp3' % i)) for i in range(len(segs))],
+      [str( tempdir / 'join-silence.mp3' ) for i in range(len(segs))]
     )
-  ))[:-1] + [tempdir / 'end-silence.mp3'])
+  ))[:-1] + [str(tempdir / 'end-silence.mp3')])
 
   subp.check_call('''ffmpeg -hide_banner -loglevel error -i 'concat:%s' -acodec copy %s''' % (join_spec, outpath), shell=True)
 
