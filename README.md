@@ -62,9 +62,13 @@ Create the necessary postgresql user and DB (and store the password in your [pgp
 
 Follow https://cloud.google.com/text-to-speech/docs/quickstart-client-libraries.
 
-Configure `GOOGLE_APPLICATION_CREDENTIALS` as described.
+Configure the `GOOGLE_APPLICATION_CREDENTIALS` env var as described, pointing to your json credentials.
+You may want to put this in a `.mise.local.toml`.
 
 Make sure the `gcloud` command works!
+And try it out with:
+
+    web-reader convert http://example.com out.mp3
 
 ## Usage
 
