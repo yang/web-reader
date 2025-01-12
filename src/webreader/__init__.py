@@ -211,18 +211,19 @@ splitters = [
     re.compile(r'[,]'),
 ]
 
-# API supports max 5000 chars per request.
-def segments(sents, maxchars=5000):
+# API supports max 5000 bytes per request.
+def segments(sents, maxbytes=5000):
   i = 0
   while True:
     curseg = []
     count = 0
     while i < len(sents):
       sent = sents[i]
-      if len(curseg) > 0 and count + 5 + len(sent) >= maxchars:
+      padding = 5
+      if len(curseg) > 0 and count + padding + len(sent.encode('utf8')) >= maxbytes:
         break
       curseg.append(sent)
-      count += 5 + len(sent)
+      count += padding + len(sent.encode('utf8'))
       i += 1
     if len(curseg) > 0:
       # Sentences better be split with ". " or ".\n" - if you split with two spaces ".  "
@@ -310,7 +311,12 @@ def req_with_retries(method, url, debug_desc, **kw):
   debug_desc = '%s (%s)' % (debug_desc, details) if debug_desc else details
   for trial in range(5):
     try:
-      return getattr(requests, method)(url, timeout=30, **kw)
+      resp = getattr(requests, method)(url, timeout=30, **kw)
+      try:
+        resp.raise_for_status()
+        return resp
+      except Exception:
+        log.warn(f'got API status {resp.status} error {resp.content} for data {kw["data"]}')
     except Exception as ex:
       log.warn('used trial #%s of 5 on %s', trial + 1, debug_desc)
       if trial + 1 < 5: time.sleep(5)
@@ -490,7 +496,7 @@ def main(argv=sys.argv):
             subj = 'AudioLizard | %s' % article.title or article.url
             mp3_url = pathlib.Path(cfg.base_url) / 'mp3' / str(article.id) if cfg.base_url else ''
             enhance_url = pathlib.Path(cfg.base_url) / 'mp3' / str(article.id) / 'enhance' if cfg.base_url else ''
-            msg = '\n\n'.join(filter(None, [article.title or '', article.url, mp3_url, enhance_url, article.body or '']))
+            msg = '\n\n'.join(filter(None, map(str, [article.title or '', article.url, mp3_url, enhance_url, article.body or ''])))
           if cfg.to:
             msg = MIMEText(msg, 'plain', 'utf-8')
             msg['Subject'] = subj
@@ -531,7 +537,10 @@ def main(argv=sys.argv):
 
 
 def worker(q, article, enhanced, outpath):
-  if article.body is not None:
-    q.put(convert_text(None, article.body, outpath, enhanced))
-  else:
-    q.put(convert(article.url, outpath, enhanced))
+  try:
+    if article.body is not None:
+      q.put(convert_text(None, article.body, outpath, enhanced))
+    else:
+      q.put(convert(article.url, outpath, enhanced))
+  except Exception as exc:
+    log.error('error processing article', exc_info=exc)
