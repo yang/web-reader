@@ -315,10 +315,11 @@ def req_with_retries(method, url, debug_desc, **kw):
       try:
         resp.raise_for_status()
         return resp
-      except Exception:
-        log.warn(f'got API status {resp.status} error {resp.content} for data {kw["data"]}')
+      except Exception as ex:
+        log.warn(f'got API status {resp.status} error {resp.content}')
+        raise
     except Exception as ex:
-      log.warn('used trial #%s of 5 on %s', trial + 1, debug_desc)
+      log.warn(f'used trial #{trial + 1} of 5 on {debug_desc} for data {kw["data"] if "data" in kw else None}')
       if trial + 1 < 5: time.sleep(5)
   else:
     raise ex
