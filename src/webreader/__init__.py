@@ -42,6 +42,9 @@ import io
 
 __author__ = 'yang'
 
+class TunneledException(Exception):
+  pass
+
 def valid_date(s):
   """
   From <https://stackoverflow.com/questions/25470844/specify-format-for-input-arguments-argparse-python>
@@ -469,6 +472,7 @@ def main(argv=sys.argv):
     while True:
       with db_session.begin():
         task = queue.get()
+        error_tb = None
         if task is not None:
           article = db_session.query(Article).get(task.data['article_id'])
           log.info('processing %s', article.url)
@@ -489,13 +493,16 @@ def main(argv=sys.argv):
             result, error_tb = subprocess_queue.get()
             assert bool(result) or bool(error_tb)
             if error_tb:
-              log.exception('error processing article')
-              subj = 'AudioLizard | Error processing article'
-              msg = '\n\n'.join([article.url, error_tb, article.body or ''])
+              raise TunneledException()
             else:
               if article.body is None:
                 article.title, article.body = result
           # Include OSError to report things like OOMs when forking a process.
+          except TunneledException as ex:
+            log.exception('error processing article')
+            subj = 'AudioLizard | Error processing article'
+            assert error_tb is not None
+            msg = '\n\n'.join([article.url, error_tb, article.body or ''])
           except (OSError, Exception) as ex:
             log.exception('error processing article')
             subj = 'AudioLizard | Error processing article'
